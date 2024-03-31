@@ -6,6 +6,5 @@ Script: Fortuna helps you make entertainment decisions by randomly selecting a m
 In Future she will also choose what you watch for you based on your preferences that you wouldn't otherwise be able to 
 express without the use of natural language.
 
-# Installation
-
 # Usage
+`python3 fortuna.py <directory> --medium=<MOVIE, SERIES, EPISODE>`
