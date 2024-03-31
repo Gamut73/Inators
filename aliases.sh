@@ -1,4 +1,4 @@
-scripts_dir="$HOME/Artificery/scripts"
+scripts_dir="$HOME/Artificery/relars"
 
 function create_aliases() {
     for dir in ${scripts_dir}/*; do
