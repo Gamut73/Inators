@@ -1,6 +1,6 @@
 scripts_dir="$HOME/Artificery/relars"
 
-function create_aliases() {
+function create_scripts_aliases() {
     for dir in ${scripts_dir}/*; do
         if [ -d "${dir}" ]; then
             dir_name=$(basename "${dir}")
@@ -9,4 +9,8 @@ function create_aliases() {
         fi
     done
 }
-create_aliases
+create_scripts_aliases
+
+
+alias eiga="cd ~/Videos/Eiga"
+alias series="cd ~/Videos/Series"
