@@ -1,4 +1,7 @@
-The Re'lar speaks and all things obey... This is a collection of scripts that were written, sometimes without wasting a disproportionately large amount of time, to automate some task.
+![download](https://github.com/Gamut73/Inators/assets/49840096/a450269d-9d33-49f7-82af-661584bdf376)
+
+
+This is a collection of scripts that were written, sometimes without wasting a disproportionately large amount of time, to automate some task.
 
 # Usage
 Currently, each folder represents a different script. The README.md file in each folder will contain the usage instructions for that script.
