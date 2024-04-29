@@ -14,3 +14,6 @@ Helps with local entertainment by helping you get more info on your movie/series
 
 ### samwise
 Helps with the organization your local movie/series/anime collection.
+
+### ripinator
+Extract audio from a video file or directory with video files
