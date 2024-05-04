@@ -17,3 +17,7 @@ Helps with the organization your local movie/series/anime collection.
 
 ### ripinator
 Extract audio from a video file or directory with video files
+
+
+### clipinator
+Cut a clip from a video file given an interval.
