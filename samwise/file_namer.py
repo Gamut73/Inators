@@ -1,54 +1,58 @@
-import re
-from ..infrastructure.llm_service import LLMService, Example, GenapiLlmService
+import os
+import json
+import google.generativeai as genai
 
-def clean_movie_name(filename):
+def _rename_file(filepath, new_filename):
+    os.rename(filepath, new_filename)
+
+def _get_movies_in_dir(dir):
+    filenames = os.listdir(dir)
+    return [filename for filename in filenames if filename.endswith((".mp4", ".mkv", ".avi"))]
+
+def _build_clean_movie_names_in_dir_prompt(filenames):
+    prompt = """
+    Below are file names. Clean them up so that they are in the format of '<Movie Title: Subtitle (Year)>'. Put each one in a json object so that your output is a json list of json
+    objects with the fields 'old' and 'new' Here is an example:
+    For the filenames:
+    2004 - Survive Style 5+.mkv 
+    Akira (1988) 2160p HDR 5.1 Eng - Jpn x265 10bit Phun Psyz.mkv
+    Europa.Europa.1990.1080p.BluRay.x264-[YTS.LT].mp4
+    You answer should be:
+    [
+        {
+            "old": "2004 - Survive Style 5+.mkv",
+            "new": "Survive Style 5+ (2004).mkv"
+        },
+        {
+            "old": "Akira (1988) 2160p HDR 5.1 Eng - Jpn x265 10bit Phun Psyz.mkv",
+            "new": "Akira (1988).mkv"
+        },
+        {
+            "old": "Europa.Europa.1990.1080p.BluRay.x264-[YTS.LT].mp4",
+            "new": "Europa Europa (1990).mp4"
+        }
+    ]
+    Here are the file name(s) to clean up: 
     """
-    This function cleans up a movie filename to remove extra strings so that it leaves in the format:
-        "Movie Title (Year).ext"
+    for filename in filenames:
+        prompt += filename + "\n"
 
-    Args:
-        filename: The filename of the movie.
+    return prompt
 
-    Returns:
-        The cleaned filename.
-    """
 
-    cleaned_name = _remove_resolutions(filename)
+def clean_movie_names_in_dir(dir):
+    genai.configure(api_key="AIzaSyBycGic-Hi1hlDHFl62Gs65W3gijIiYb5k")
+    text_model = genai.GenerativeModel('gemini-pro')
+
+    print('* Finding all the movies in the directory')
+    movie_titles = _get_movies_in_dir(dir)    
     
-    match = re.search(r"\d{4}", cleaned_name)
-    if match:
-        year = match.group()
-        cleaned_name = f"{cleaned_name} ({year})"
+    print('* Cleaning up movie names')
+    prompt = _build_clean_movie_names_in_dir_prompt(movie_titles)
     
-    # Remove everything after the first year in parentheses
-    cleaned_name = re.sub(r"\(\d+\)(.*)", "", filename)
-    # Remove everything after a dot followed by a number (e.g., ".1080p")
-    cleaned_name = re.sub(r"\.\d+", "", cleaned_name)
-    # Remove everything inside square brackets
-    cleaned_name = re.sub(r"\[.*?\]", "", cleaned_name)
-    # Remove extra spaces
-    cleaned_name = cleaned_name.strip()
-    # Put the year in parentheses at the end, if it exists
-    match = re.search(r"\d{4}", cleaned_name)
-    if match:
-        year = match.group()
-        cleaned_name = f"{cleaned_name} ({year})"
-    # Add extension back on
-    return f"{cleaned_name}.{filename.split('.')[-1]}"
-
-def _remove_resolutions(filename):
-    return re.sub(r"\d+p", "", filename)
-
-
-llmService: LLMService = GenapiLlmService()
-
-# filenames = [
-#     "2004 - Survive Style 5+.mkv",
-#     "Akira (1988) 2160p HDR 5.1 Eng - Jpn x265 10bit Phun Psyz.mkv",
-#     "Europa.Europa.1990.1080p.BluRay.x264-[YTS.LT].mp4",
-#     "Gatto Nero, Gatto Bianco (1998) ITA sub ENG 1080p by PanzerB.mkv"
-# ]
-
-# for filename in filenames:
-#     cleaned_filename = clean_movie_name(filename)
-#     print(f"{filename} ||| {cleaned_filename}")
+    response = text_model.generate_content(prompt)
+    clean_titles = json.loads(response.text)
+    print('* Renaming movies')
+    for clean_title in clean_titles:
+        _rename_file(os.path.join(dir, clean_title['old']), os.path.join(dir, clean_title['new']))
+        print(f"- {clean_title['old']} --> {clean_title['new']}")
