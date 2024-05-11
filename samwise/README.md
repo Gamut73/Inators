@@ -20,7 +20,7 @@ In this example, `move_movie_downloads` is the action to perform and `/path/to/s
 Currently, the script supports the following actions:
 
 - `move_movie_downloads` or `mmd`: Moves movies and subtitles from the source directories to the correct directories and removes the source directories.
-- `clean_movie_names` or `cmn`: Cleans up movie file names to a standard format.
+- `clean_movie_dir_names` or `cmdn`: Cleans up movie file names to a standard format.
 
 ## Functions
 
