@@ -4,7 +4,7 @@ Samwise is a Python script that helps with the organization of your local movie/
 
 ## Usage
 
-1. Ensure that `samwise.py` and `file_mover.py` are in the same directory.
+1. Ensure that `samwise.py`, `file_namer.py` and `file_mover.py` are in the same directory.
 2. Run the `samwise.py` script with the desired action and source directories as command line arguments.
 
 Here is an example of how to use the script:
@@ -20,6 +20,7 @@ In this example, `move_movie_downloads` is the action to perform and `/path/to/s
 Currently, the script supports the following actions:
 
 - `move_movie_downloads` or `mmd`: Moves movies and subtitles from the source directories to the correct directories and removes the source directories.
+- `clean_movie_names` or `cmn`: Cleans up movie file names to a standard format.
 
 ## Functions
 
