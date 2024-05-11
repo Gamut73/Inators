@@ -39,7 +39,7 @@ def _build_clean_movie_names_in_dir_prompt(filenames):
 
 
 def clean_movie_names_in_dir(dir):
-    genai.configure(api_key="AIzaSyBycGic-Hi1hlDHFl62Gs65W3gijIiYb5k")
+    genai.configure(api_key="YOUR_API_KEY")
     text_model = genai.GenerativeModel('gemini-pro')
 
     print(f"* Finding all the movies in the directory: {dir}")
