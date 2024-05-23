@@ -5,10 +5,12 @@ import os
 def clip_video(input_file_path, clip_name, start_time, end_time, output_dir):
     if os.path.exists(output_dir) == False:
         os.makedirs(output_dir)
-    
+
+    og_vid_name = os.path.basename(input_file_path)
+    og_vid_name_without_ext = os.path.splitext(og_vid_name)[0]
     clip = VideoFileClip(input_file_path)
     clip = clip.subclip(_convert_time_to_seconds(start_time), _convert_time_to_seconds(end_time))
-    clip.write_videofile(os.path.join(output_dir, clip_name+ ".mp4"))
+    clip.write_videofile(os.path.join(output_dir, clip_name + " (" + og_vid_name_without_ext + ").mp4"))
     
 def _convert_time_to_seconds(time):
     while (time.count(":") != 2):
