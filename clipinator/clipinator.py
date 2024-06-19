@@ -2,16 +2,33 @@ from moviepy.editor import *
 import argparse
 import os
 
+CLIP_GROUP_PREFIX = "_X__"
+
 def clip_video(input_file_path, clip_name, start_time, end_time, output_dir):
     if os.path.exists(output_dir) == False:
         os.makedirs(output_dir)
 
     og_vid_name = os.path.basename(input_file_path)
-    og_vid_name_without_ext = os.path.splitext(og_vid_name)[0]
+    clip_save_file_path = _build_clip_file_path(clip_name, og_vid_name, output_dir)
     clip = VideoFileClip(input_file_path)
     clip = clip.subclip(_convert_time_to_seconds(start_time), _convert_time_to_seconds(end_time))
-    clip.write_videofile(os.path.join(output_dir, clip_name + " (" + og_vid_name_without_ext + ").mp4"))
-    
+    clip.write_videofile(clip_save_file_path)
+
+
+def _build_clip_file_path(clip_name, og_vid_name, output_dir):
+    file_path = output_dir
+    clip_name_without_group = clip_name
+    if CLIP_GROUP_PREFIX in clip_name:
+        group_name = clip_name.split(CLIP_GROUP_PREFIX)[0]
+        clip_name_without_group = clip_name.split(CLIP_GROUP_PREFIX)[1]
+        file_path = os.path.join(output_dir, group_name)
+        os.makedirs(file_path, exist_ok=True)
+
+    og_vid_name_without_ext = os.path.splitext(og_vid_name)[0]
+
+    return os.path.join(file_path, clip_name_without_group + " (" + og_vid_name_without_ext + ").mp4")
+
+
 def _convert_time_to_seconds(time):
     while (time.count(":") != 2):
         time = "00:" + time
