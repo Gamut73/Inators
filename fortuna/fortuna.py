@@ -21,6 +21,7 @@ def pick_random_video(items, number_of_videos):
 
 
 def open_video_with_medial_player(video_files):
+    print(video_files)
     subprocess.call([MEDIA_PLAYER] + video_files)
 
 
@@ -33,25 +34,29 @@ def get_movie(dir, number_of_videos):
         open_video_with_medial_player(video_files)
 
 
-def get_series(directory):
+def get_series(directory, number_of_videos):
+    random_episodes = []
     seasons = get_all_folders(directory)
     if not seasons:
         print(f'<<No Seasons Found Within {directory}>>')
     else:
-        random_season = pick_random_video(seasons)
-        episodes = get_video_files(os.path.join(directory, random_season))
-        if not episodes:
-            print(f'<<No Episodes Found Within Season {random_season}>>')
-        else:
-            random_episode = pick_random_video(episodes)
-            open_video_with_medial_player(os.path.join(directory, random_season, random_episode))
+        for _ in range(number_of_videos):
+            random_season = random.choice(seasons)
+            episodes = get_video_files(os.path.join(directory, random_season))
+            if not episodes:
+                print(f'<<No Episodes Found Within Season {random_season}>>')
+            else:
+                random_episode = pick_random_video(episodes, 1)
+                random_episodes.append(os.path.join(directory, random_season, random_episode[0]))
+
+        open_video_with_medial_player(random_episodes)
 
 
 def main(directory, video_type, number_of_videos):
     if video_type == "MOVIE":
         get_movie(directory, number_of_videos)
     elif video_type == "SERIES":
-        get_series(directory)
+        get_series(directory, number_of_videos)
 
 
 if __name__ == "__main__":
