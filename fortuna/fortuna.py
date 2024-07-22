@@ -55,9 +55,14 @@ def main(directory, medium):
 
 
 if __name__ == "__main__":
+    medium = "MOVIE"
+
     parser = argparse.ArgumentParser(description="Open a random video file from within a directory")
     parser.add_argument("dir", help="The source directory")
-    parser.add_argument("--medium", help="MOVIE (default), SERIES (season + episode), or EPISODE", default="MOVIE")
+    parser.add_argument("-s", "--series", action="store_true", help="Expects series organized in seasons folders")
 
     args = parser.parse_args()
-    main(args.dir, args.medium)
+    if args.series:
+        medium = "SERIES"
+
+    main(args.dir, medium)
