@@ -1,11 +1,8 @@
 import argparse
-import os
+import re
 
 from moviepy.editor import *
 from moviepy.video.tools.subtitles import SubtitlesClip
-
-CLIP_GROUP_PREFIX = "_X__"
-
 
 def clip_video(input_file_path, clip_name, start_time, end_time, output_dir, subtitles_file_path):
     if os.path.exists(output_dir) == False:
@@ -32,17 +29,31 @@ def _add_subtitiles(video_clip, subtitles_file_path):
 
 def _build_clip_file_path(clip_name, og_vid_name, output_dir):
     file_path = output_dir
-    clip_name_without_group = clip_name
-    if CLIP_GROUP_PREFIX in clip_name:
-        group_name = clip_name.split(CLIP_GROUP_PREFIX)[0]
-        clip_name_without_group = clip_name.split(CLIP_GROUP_PREFIX)[1]
-        file_path = os.path.join(output_dir, group_name)
-        os.makedirs(file_path, exist_ok=True)
+
+    save_path_as_list = _get_save_path_as_list(clip_name)
+    clip_name_without_group = save_path_as_list[-1]
+
+    if len(save_path_as_list) > 1:
+        for group_name in save_path_as_list[:-1]:
+            file_path = os.path.join(file_path, group_name)
+            os.makedirs(file_path, exist_ok=True)
 
     og_vid_name_without_ext = os.path.splitext(og_vid_name)[0]
 
     return os.path.join(file_path, clip_name_without_group + " (" + og_vid_name_without_ext + ").mp4")
 
+
+def _get_save_path_as_list(input_string):
+    # Find all substrings within square brackets
+    substrings = re.findall(r'\[(.*?)\]', input_string)
+
+    # Remove all substrings within square brackets from the input string
+    cleaned_string = re.sub(r'\[.*?\]', '', input_string)
+
+    # Append the cleaned string to the list of substrings
+    substrings.append(cleaned_string)
+
+    return substrings
 
 def _convert_time_to_seconds(time):
     while (time.count(":") != 2):
