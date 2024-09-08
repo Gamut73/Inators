@@ -2,6 +2,9 @@ import os
 
 import google.generativeai as genai
 
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def _rename_file(filepath, new_filename):
     os.rename(filepath, new_filename)
@@ -40,7 +43,7 @@ def _build_clean_movie_names_in_dir_prompt(filenames):
 
 
 def clean_movie_names_in_dir(dir):
-    genai.configure(api_key="YOUR_API_KEY")
+    genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
     text_model = genai.GenerativeModel('gemini-pro')
 
     print(f"* Finding all the movies in the directory: {dir}")
