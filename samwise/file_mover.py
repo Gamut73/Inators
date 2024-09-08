@@ -15,12 +15,17 @@ def move_movie(source_dir):
 
     os.makedirs(movie_dir, exist_ok=True)
 
-    for filename in os.listdir(source_dir):
-        if filename.endswith((".mp4", ".mkv", ".avi")):
-            shutil.move(os.path.join(source_dir, filename), movie_dir)
+    if (is_video_file(source_dir)):
+        shutil.move(source_dir, movie_dir)
+    else:
+        for filename in os.listdir(source_dir):
+            if is_video_file(filename):
+                shutil.move(os.path.join(source_dir, filename), movie_dir)
 
     print("\t- Successfully moved movie")
 
+def is_video_file(filename):
+    return filename.endswith((".mp4", ".mkv", ".avi"))
 
 def _move_subtitles_from_subfolder(source_dir, subtitle_dir):
     for filename in os.listdir(source_dir):

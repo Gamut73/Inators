@@ -1,14 +1,17 @@
 import argparse
-from file_mover import move_subtitles, move_movie, remove_source_dir
+from file_mover import move_subtitles, move_movie, remove_source_dir, is_video_file
 from file_namer import clean_movie_names_in_dir
 
 
 def move_movie_downloads(source_dirs):
     for source_dir in source_dirs:
-        print(f"* Processing Movie In: {source_dir}")
-        move_subtitles(source_dir)
+        print(f"* Processing Movie: {source_dir}")
         move_movie(source_dir)
-        remove_source_dir(source_dir)
+        if not is_video_file(source_dir):
+            move_subtitles(source_dir)
+            remove_source_dir(source_dir)
+
+
 
 
 def main(source_dirs, action):
