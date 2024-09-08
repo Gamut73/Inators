@@ -1,6 +1,7 @@
 import os
-import json
+
 import google.generativeai as genai
+
 
 def _rename_file(filepath, new_filename):
     os.rename(filepath, new_filename)
