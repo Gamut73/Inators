@@ -20,7 +20,17 @@ def clip_video(input_file_path, clip_name, start_time, end_time, output_dir, sub
 
 
 def _add_subtitiles(video_clip, subtitles_file_path):
-    generator = lambda txt: TextClip(txt, font='Arial', fontsize=50, color='white', method='caption', align='South', size=video_clip.size)
+    generator = lambda txt: TextClip(
+        txt,
+        font='Dejavu-Sans-Bold',
+        fontsize=72,
+        color='white',
+        method='caption',
+        stroke_color='black',
+        stroke_width=2,
+        align='South',
+        size=video_clip.size
+    )
 
     subtitle_clip = SubtitlesClip(subtitles_file_path, generator)
     return CompositeVideoClip((video_clip, subtitle_clip.set_position(('center', 'bottom'))), size=video_clip.size)
