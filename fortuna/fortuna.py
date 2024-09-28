@@ -2,8 +2,17 @@ import os
 import random
 import subprocess
 import argparse
+from enum import Enum
+
+from IMDBService import get_movie_info
 
 MEDIA_PLAYER = 'vlc'
+
+
+class ActionType(Enum):
+    PLAY = "PLAY"
+    SHOW_INFO = "SHOW_INFO"
+
 
 
 def get_all_folders(directory):
@@ -25,7 +34,7 @@ def open_video_with_medial_player(video_files):
     subprocess.call([MEDIA_PLAYER] + video_files)
 
 
-def get_movie(dir, number_of_videos):
+def play_movie(dir, number_of_videos):
     video_files = get_video_files(dir)
     if not video_files:
         print('<<No Videos Found Within This Directory>>')
@@ -34,7 +43,7 @@ def get_movie(dir, number_of_videos):
         open_video_with_medial_player(video_files)
 
 
-def get_series(directory, number_of_videos):
+def play_series(directory, number_of_videos):
     random_episodes = []
     seasons = get_all_folders(directory)
     if not seasons:
@@ -52,11 +61,18 @@ def get_series(directory, number_of_videos):
         open_video_with_medial_player(random_episodes)
 
 
-def main(directory, video_type, number_of_videos):
+def play(source, number_of_videos, video_type):
     if video_type == "MOVIE":
-        get_movie(directory, number_of_videos)
+        play_movie(source, number_of_videos)
     elif video_type == "SERIES":
-        get_series(directory, number_of_videos)
+        play_series(source, number_of_videos)
+
+
+def main(directory, video_type, action, number_of_videos):
+    if (action == ActionType.PLAY):
+        play(directory, number_of_videos, video_type)
+    elif (action == ActionType.SHOW_INFO):
+        print(get_movie_info(directory))
 
 
 if __name__ == "__main__":
@@ -66,9 +82,13 @@ if __name__ == "__main__":
     parser.add_argument("dir", help="The source directory")
     parser.add_argument("-s", "--series", action="store_true", help="Expects series organized in seasons folders")
     parser.add_argument("-n", "--number", type=int, default=1, help="Number of random videos to open")
+    parser.add_argument("-i", "--info", action="store_true", help="Get movie info")
 
     args = parser.parse_args()
     if args.series:
         medium = "SERIES"
 
-    main(args.dir, medium, args.number)
+    action = ActionType.PLAY if not args.info else ActionType.SHOW_INFO
+
+    main(args.dir, medium, action, args.number)
+
