@@ -1,6 +1,6 @@
 import argparse
 from file_mover import move_subtitles, move_movie, remove_source_dir, is_video_file
-from file_namer import clean_movie_names_in_dir
+from util.file_namer import clean_movie_names_in_dir
 
 
 def move_movie_downloads(source_dirs):
