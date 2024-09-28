@@ -1,6 +1,9 @@
 import os
-import json
+from pathlib import Path
+
 import google.generativeai as genai
+from dotenv import load_dotenv
+
 
 def _rename_file(filepath, new_filename):
     os.rename(filepath, new_filename)
@@ -39,7 +42,10 @@ def _build_clean_movie_names_in_dir_prompt(filenames):
 
 
 def clean_movie_names_in_dir(dir):
-    genai.configure(api_key="YOUR_API_KEY")
+    _load_dotenv()
+
+    gemini_api_key = os.getenv('GEMINI_API_KEY')
+    genai.configure(api_key=gemini_api_key)
     text_model = genai.GenerativeModel('gemini-pro')
 
     print(f"* Finding all the movies in the directory: {dir}")
@@ -54,4 +60,9 @@ def clean_movie_names_in_dir(dir):
     for clean_title in clean_titles:
         _rename_file(os.path.join(dir, clean_title['old']), os.path.join(dir, clean_title['new']))
         print(f"\t- {clean_title['old']} --> {clean_title['new']}")
-    print('* Done :-)')    
+    print('* Done :-)')
+
+
+def _load_dotenv():
+    script_dir = Path(__file__).parent
+    load_dotenv(script_dir / 'local.env')
