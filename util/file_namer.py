@@ -40,22 +40,27 @@ def _build_clean_movie_names_in_dir_prompt(filenames):
 
     return prompt
 
-
-def clean_movie_names_in_dir(dir):
+def clean_list_of_movie_names(movie_names):
     _load_dotenv()
 
     gemini_api_key = os.getenv('GEMINI_API_KEY')
     genai.configure(api_key=gemini_api_key)
     text_model = genai.GenerativeModel('gemini-pro')
 
-    print(f"* Finding all the movies in the directory: {dir}")
-    movie_titles = _get_movies_in_dir(dir)    
-    
-    print('* Cleaning up movie names')
-    prompt = _build_clean_movie_names_in_dir_prompt(movie_titles)
-    
+    prompt = _build_clean_movie_names_in_dir_prompt(movie_names)
+
     response = text_model.generate_content(prompt)
     clean_titles = _build_json_object_for_rename_response(response.text)
+
+    return clean_titles
+
+def clean_movie_names_in_dir(dir):
+    print(f"* Finding all the movies in the directory: {dir}")
+    movie_titles = _get_movies_in_dir(dir)
+
+    print('* Cleaning up movie names')
+    clean_titles = clean_list_of_movie_names(movie_titles)
+
     print('* Renaming movies')
     for clean_title in clean_titles:
         _rename_file(os.path.join(dir, clean_title['old']), os.path.join(dir, clean_title['new']))
