@@ -72,7 +72,7 @@ def main(directory, video_type, action, number_of_videos):
     if (action == ActionType.PLAY):
         play(directory, number_of_videos, video_type)
     elif (action == ActionType.SHOW_INFO):
-        print(get_movie_info(directory))
+        get_movie_info(directory)
 
 
 if __name__ == "__main__":
