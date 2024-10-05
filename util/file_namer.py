@@ -8,9 +8,9 @@ from dotenv import load_dotenv
 def _rename_file(filepath, new_filename):
     os.rename(filepath, new_filename)
 
-def _get_movies_in_dir(dir):
-    filenames = os.listdir(dir)
-    return [filename for filename in filenames if filename.endswith((".mp4", ".mkv", ".avi"))]
+def _get_movies_in_dir(directory):
+    filenames = os.listdir(directory)
+    return [os.path.join(directory, filename) for filename in filenames if filename.endswith((".mp4", ".mkv", ".avi"))]
 
 def _build_json_object_for_rename_response(response):
     response_lines = response.split("\n")
@@ -40,7 +40,7 @@ def _build_clean_movie_names_in_dir_prompt(filenames):
 
     return prompt
 
-def clean_list_of_movie_names(movie_names):
+def get_cleaned_names_for_movie_files(movie_names):
     _load_dotenv()
 
     gemini_api_key = os.getenv('GEMINI_API_KEY')
@@ -54,18 +54,24 @@ def clean_list_of_movie_names(movie_names):
 
     return clean_titles
 
-def clean_movie_names_in_dir(dir):
-    print(f"* Finding all the movies in the directory: {dir}")
-    movie_titles = _get_movies_in_dir(dir)
 
+def clean_list_of_movie_files(movie_files):
     print('* Cleaning up movie names')
-    clean_titles = clean_list_of_movie_names(movie_titles)
+    clean_titles = get_cleaned_names_for_movie_files(movie_files)
 
     print('* Renaming movies')
     for clean_title in clean_titles:
-        _rename_file(os.path.join(dir, clean_title['old']), os.path.join(dir, clean_title['new']))
+        new_filename = os.path.join(os.path.dirname(clean_title['old']), clean_title['new'])
+        _rename_file(clean_title['old'], new_filename)
         print(f"\t- {clean_title['old']} --> {clean_title['new']}")
     print('* Done :-)')
+
+
+def clean_movie_names_in_dir(directory):
+    print(f"* Finding all the movies in the directory: {directory}")
+    movie_files = _get_movies_in_dir(directory)
+
+    clean_list_of_movie_files(movie_files)
 
 
 def _load_dotenv():

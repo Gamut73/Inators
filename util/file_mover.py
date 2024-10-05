@@ -14,15 +14,19 @@ def move_movie(source_dir):
     movie_dir = os.path.expanduser("~/Videos/Eiga")
 
     os.makedirs(movie_dir, exist_ok=True)
+    movie_filepath = movie_dir
 
     if (is_video_file(source_dir)):
         shutil.move(source_dir, movie_dir)
+        movie_filepath = os.path.join(movie_dir, os.path.basename(source_dir))
     else:
         for filename in os.listdir(source_dir):
             if is_video_file(filename):
                 shutil.move(os.path.join(source_dir, filename), movie_dir)
+                movie_filepath = os.path.join(movie_dir, filename)
 
     print("\t- Successfully moved movie")
+    return movie_filepath
 
 def is_video_file(filename):
     return filename.endswith((".mp4", ".mkv", ".avi"))
