@@ -21,7 +21,7 @@ def move_movie(source_dir):
         movie_filepath = os.path.join(movie_dir, os.path.basename(source_dir))
     else:
         for filename in os.listdir(source_dir):
-            if is_video_file(filename):
+            if is_video_file(filename) and not is_sample_video(filename):
                 shutil.move(os.path.join(source_dir, filename), movie_dir)
                 movie_filepath = os.path.join(movie_dir, filename)
 
@@ -30,6 +30,9 @@ def move_movie(source_dir):
 
 def is_video_file(filename):
     return filename.endswith((".mp4", ".mkv", ".avi"))
+
+def is_sample_video(filename):
+    return filename.lower().find("sample") != -1
 
 def _move_subtitles_from_subfolder(source_dir, subtitle_dir):
     for filename in os.listdir(source_dir):
