@@ -39,7 +39,6 @@ def get_clips_from_csv_file(file_path):
                 'start': parts[0],
                 'end': parts[1],
                 'title': parts[2],
-                'group': parts[3]
             })
 
         return clips[1:]

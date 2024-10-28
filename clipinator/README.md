@@ -13,6 +13,8 @@ Essentially everything surrounded by "[]" is a folder will be created so that yo
 Not including an groups will save the file at ```{output_dir}/{clip_name}.mp4```
 
 # CSV file
+Input can be provided in a csv file and ran with the ```-f``` flag. For example:
+```clipinator /path/to/video -f /path/to/csv/file.csv```
 You can provide a csv file with the following format and headings:
 ```
 start_time, end_time, clip_title (Grouping rule still apply)
