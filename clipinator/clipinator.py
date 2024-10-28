@@ -19,6 +19,37 @@ def clip_video(input_file_path, clip_name, start_time, end_time, output_dir, sub
     clip.write_videofile(clip_save_file_path)
 
 
+def clip_multiple_clips_from_a_video(input_file_path, clips, output_dir, subtitles_file_path):
+
+    clips_parent_folder = os.path.join(output_dir, _get_filename_from_path(input_file_path))
+    for clip in clips:
+        clip_video(input_file_path, clip['title'], clip['start'], clip['end'], clips_parent_folder, subtitles_file_path)
+
+def get_clips_from_csv_file(file_path):
+    with open(file_path, 'r') as file:
+        lines = file.readlines()
+        clips = []
+        for line in lines:
+            line = line.strip()
+            if line == '':
+                continue
+
+            parts = line.split(',')
+            clips.append({
+                'start': parts[0],
+                'end': parts[1],
+                'title': parts[2],
+                'group': parts[3]
+            })
+
+        return clips[1:]
+
+
+def _get_filename_from_path(file_path):
+    file_name_with_extension = os.path.basename(file_path)
+    return os.path.splitext(file_name_with_extension)[0]
+
+
 def _add_subtitiles(video_clip, subtitles_file_path):
     generator = lambda txt: TextClip(
         txt,
@@ -77,14 +108,19 @@ if __name__ == "__main__":
     default_output_dir = os.path.join(os.path.expanduser("~"), "Videos", "Clips")
 
     parser = argparse.ArgumentParser(description='Clip a video')
-    parser.add_argument('input_file_path', help="Name of the input file")
-    parser.add_argument('start_time',
-                        help="Start time of the clip in the format hh:mm:ss (e.g 10 is ten seconds, 00:10 is ten seconds, 21:00 is twenty one minutes, 00:21:00 is also twenty one minutes)")
-    parser.add_argument('end_time', help="End time of the clip in the same format as start time")
-    parser.add_argument('clip_name', help="Name of the clip")
+    parser.add_argument('input_file_path', default='', help="Name of the input file")
+    parser.add_argument('start_time', nargs='?',
+                        default='',help="Start time of the clip in the format hh:mm:ss (e.g 10 is ten seconds, 00:10 is ten seconds, 21:00 is twenty one minutes, 00:21:00 is also twenty one minutes)")
+    parser.add_argument('end_time', nargs='?', default='', help="End time of the clip in the same format as start time")
+    parser.add_argument('clip_name', nargs='?', default='', help="Name of the clip")
     parser.add_argument('-o', '--output_dir', default=default_output_dir,
                         help="Output directory. Creates a new directory if it doesn't exist. Default is the current directory")
     parser.add_argument('-s', '--subtitles', default='', help="Path to the subtitles file (.srt)")
+    parser.add_argument('-f', '--file', help="CSV file path containing clip details")
 
     args = parser.parse_args()
-    clip_video(args.input_file_path, args.clip_name, args.start_time, args.end_time, args.output_dir, args.subtitles)
+
+    if args.file:
+        clip_multiple_clips_from_a_video(args.input_file_path, get_clips_from_csv_file(args.file), args.output_dir, args.subtitles)
+    else:
+        clip_video(args.input_file_path, args.clip_name, args.start_time, args.end_time, args.output_dir, args.subtitles)
