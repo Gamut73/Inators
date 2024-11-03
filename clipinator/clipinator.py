@@ -1,8 +1,12 @@
 import argparse
 import re
+import csv
 
 from moviepy.editor import *
 from moviepy.video.tools.subtitles import SubtitlesClip
+
+TIMESTAMPS_FOLDER = 'Videos/Clips/Timestamps'
+CSV_FILE_EDITOR = 'libreoffice'
 
 def clip_video(input_file_path, clip_name, start_time, end_time, output_dir, subtitles_file_path):
     if os.path.exists(output_dir) == False:
@@ -20,7 +24,6 @@ def clip_video(input_file_path, clip_name, start_time, end_time, output_dir, sub
 
 
 def clip_multiple_clips_from_a_video(input_file_path, clips, output_dir, subtitles_file_path):
-
     clips_parent_folder = os.path.join(output_dir, _get_filename_from_path(input_file_path))
     for clip in clips:
         clip_video(input_file_path, clip['title'], clip['start'], clip['end'], clips_parent_folder, subtitles_file_path)
@@ -44,6 +47,17 @@ def get_clips_from_csv_file(file_path):
         return clips[1:]
 
 
+def generate_clips_csv_file_template(filename):
+    folder_path = _create_folders_in_home(TIMESTAMPS_FOLDER)
+    file_path = os.path.join(folder_path, filename + '.csv')
+    header = ['start', 'end', 'title']
+    with open(file_path, 'w', newline='') as csvfile:
+        csvwriter = csv.writer(csvfile)
+        csvwriter.writerow(header)
+
+    _open_csv_editor(file_path)
+
+
 def _get_filename_from_path(file_path):
     file_name_with_extension = os.path.basename(file_path)
     return os.path.splitext(file_name_with_extension)[0]
@@ -65,6 +79,16 @@ def _add_subtitiles(video_clip, subtitles_file_path):
     subtitle_clip = SubtitlesClip(subtitles_file_path, generator)
     return CompositeVideoClip((video_clip, subtitle_clip.set_position(('center', 'bottom'))), size=video_clip.size)
 
+
+def _create_folders_in_home(path):
+    home_dir = os.path.expanduser("~")
+    full_path = os.path.join(home_dir, path)
+    os.makedirs(full_path, exist_ok=True)
+    return full_path
+
+
+def _open_csv_editor(file_path):
+    os.system(CSV_FILE_EDITOR + ' ' + file_path)
 
 
 def _build_clip_file_path(clip_name, og_vid_name, output_dir):
@@ -107,7 +131,7 @@ if __name__ == "__main__":
     default_output_dir = os.path.join(os.path.expanduser("~"), "Videos", "Clips")
 
     parser = argparse.ArgumentParser(description='Clip a video')
-    parser.add_argument('input_file_path', default='', help="Name of the input file")
+    parser.add_argument('input_file_path', nargs='?', default='', help="Name of the input file")
     parser.add_argument('start_time', nargs='?',
                         default='',help="Start time of the clip in the format hh:mm:ss (e.g 10 is ten seconds, 00:10 is ten seconds, 21:00 is twenty one minutes, 00:21:00 is also twenty one minutes)")
     parser.add_argument('end_time', nargs='?', default='', help="End time of the clip in the same format as start time")
@@ -116,10 +140,13 @@ if __name__ == "__main__":
                         help="Output directory. Creates a new directory if it doesn't exist. Default is the current directory")
     parser.add_argument('-s', '--subtitles', default='', help="Path to the subtitles file (.srt)")
     parser.add_argument('-f', '--file', help="CSV file path containing clip details")
+    parser.add_argument('-t', '--template', help="Value is the filename of a csv that will be generated with the template for the clips")
 
     args = parser.parse_args()
 
     if args.file:
         clip_multiple_clips_from_a_video(args.input_file_path, get_clips_from_csv_file(args.file), args.output_dir, args.subtitles)
+    elif args.template:
+        generate_clips_csv_file_template(args.template)
     else:
         clip_video(args.input_file_path, args.clip_name, args.start_time, args.end_time, args.output_dir, args.subtitles)
