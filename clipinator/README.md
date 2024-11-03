@@ -20,3 +20,7 @@ You can provide a csv file with the following format and headings:
 start_time, end_time, clip_title (Grouping rule still apply)
 ```
 and It will create a folder for the csv filename and save the clips(each row of the csv file) in that folder. The groupings above 1will still apply.
+
+# Requirements
+See requirements.txt
+```

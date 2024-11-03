@@ -1,6 +1,7 @@
 import argparse
 import re
 import csv
+from send2trash import send2trash
 
 from moviepy.editor import *
 from moviepy.video.tools.subtitles import SubtitlesClip
@@ -152,6 +153,11 @@ if __name__ == "__main__":
             args.output_dir,
             args.subtitles
         )
+        try:
+            send2trash(args.file)
+            print(f"Moved {args.file} to trash")
+        except Exception as e:
+            print(f"Failed to move {args.file} to trash: because\n\t {e}")
     elif args.template:
         generate_clips_csv_file_template(args.template)
     else:
