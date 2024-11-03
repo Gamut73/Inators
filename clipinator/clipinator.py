@@ -23,8 +23,8 @@ def clip_video(input_file_path, clip_name, start_time, end_time, output_dir, sub
     clip.write_videofile(clip_save_file_path)
 
 
-def clip_multiple_clips_from_a_video(input_file_path, clips, output_dir, subtitles_file_path):
-    clips_parent_folder = os.path.join(output_dir, _get_filename_from_path(input_file_path))
+def clip_multiple_clips_from_a_video(input_file_path, clips, clips_parent_folder_name, output_dir, subtitles_file_path):
+    clips_parent_folder = os.path.join(output_dir, clips_parent_folder_name)
     for clip in clips:
         clip_video(input_file_path, clip['title'], clip['start'], clip['end'], clips_parent_folder, subtitles_file_path)
 
@@ -145,7 +145,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.file:
-        clip_multiple_clips_from_a_video(args.input_file_path, get_clips_from_csv_file(args.file), args.output_dir, args.subtitles)
+        clip_multiple_clips_from_a_video(
+            args.input_file_path,
+            get_clips_from_csv_file(args.file),
+            os.path.basename(args.file).split('.')[0],
+            args.output_dir,
+            args.subtitles
+        )
     elif args.template:
         generate_clips_csv_file_template(args.template)
     else:
