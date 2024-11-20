@@ -25,30 +25,27 @@ def clip_video(input_file_path, clip_name, start_time, end_time, output_dir, sub
 
 
 def clip_multiple_clips_from_a_video(input_file_path, clips, clips_parent_folder_name, output_dir, subtitles_file_path):
-    clips_parent_folder = os.path.join(output_dir, clips_parent_folder_name)
+    clean_clips_parent_folder_name = clips_parent_folder_name.split('(')[0].strip()
+    clips_parent_folder = os.path.join(output_dir, clean_clips_parent_folder_name)
     for clip in clips:
         clip_video(input_file_path, clip['title'], clip['start'], clip['end'], clips_parent_folder, subtitles_file_path)
 
+
 def get_clips_from_csv_file(file_path):
     with open(file_path, 'r') as file:
-        lines = file.readlines()
+        csv_reader = csv.DictReader(file)
         clips = []
-        for line in lines:
-            line = line.strip()
-            if line == '':
-                continue
-
-            parts = line.split(',')
+        for row in csv_reader:
             clips.append({
-                'start': parts[0],
-                'end': parts[1],
-                'title': parts[2],
+                'start': row['start'],
+                'end': row['end'],
+                'title': row['title'],
             })
-
-        return clips[1:]
+    return clips
 
 
 def generate_clips_csv_file_template(filename):
+
     folder_path = _create_folders_in_home(TIMESTAMPS_FOLDER)
     file_path = os.path.join(folder_path, filename + '.csv')
     header = ['start', 'end', 'title']
@@ -89,7 +86,7 @@ def _create_folders_in_home(path):
 
 
 def _open_csv_editor(file_path):
-    os.system(CSV_FILE_EDITOR + ' ' + file_path)
+    os.system(CSV_FILE_EDITOR + ' \"' + file_path + '\"')
 
 
 def _build_clip_file_path(clip_name, og_vid_name, output_dir):
