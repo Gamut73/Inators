@@ -62,6 +62,7 @@ def _get_filename_from_path(file_path):
 
 
 def _add_subtitiles(video_clip, subtitles_file_path):
+    print("Subtitles file path: ", subtitles_file_path)
     generator = lambda txt: TextClip(
         txt,
         font='Dejavu-Sans-Bold',
@@ -74,8 +75,20 @@ def _add_subtitiles(video_clip, subtitles_file_path):
         size=video_clip.size
     )
 
+    _remove_trailing_empty_lines(subtitles_file_path)
     subtitle_clip = SubtitlesClip(subtitles_file_path, generator)
     return CompositeVideoClip((video_clip, subtitle_clip.set_position(('center', 'bottom'))), size=video_clip.size)
+
+
+def _remove_trailing_empty_lines(file_path):
+    with open(file_path, 'r') as file:
+        lines = file.readlines()
+
+    while lines and lines[-1].strip() == '':
+        lines.pop()
+
+    with open(file_path, 'w') as file:
+        file.writelines(lines)
 
 
 def _create_folders_in_home(path):
