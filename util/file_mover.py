@@ -28,6 +28,15 @@ def move_movie(source_dir):
     print("\t- Successfully moved movie")
     return movie_filepath
 
+
+def get_all_video_files(source_dir):
+    video_files = []
+    for filename in os.listdir(source_dir):
+        if is_video_file(filename) and not is_sample_video(filename):
+            video_files.append(os.path.join(source_dir, filename))
+    return video_files
+
+
 def is_video_file(filename):
     return filename.endswith((".mp4", ".mkv", ".avi"))
 

@@ -4,7 +4,7 @@ import subprocess
 import argparse
 from enum import Enum
 
-from IMDBService import get_movie_info
+from IMDBService import get_info, get_info_by_source_dir
 
 MEDIA_PLAYER = 'vlc'
 
@@ -12,7 +12,6 @@ MEDIA_PLAYER = 'vlc'
 class ActionType(Enum):
     PLAY = "PLAY"
     SHOW_INFO = "SHOW_INFO"
-
 
 
 def get_all_folders(directory):
@@ -35,12 +34,13 @@ def open_video_with_medial_player(video_files):
 
 
 def play_movie(dir, number_of_videos):
-    video_files = get_video_files(dir)
-    if not video_files:
+    movies = None
+    movies = get_video_files(dir)
+    if not movies:
         print('<<No Videos Found Within This Directory>>')
     else:
-        video_files = pick_random_video(video_files, number_of_videos)
-        open_video_with_medial_player(video_files)
+        movies_to_play = pick_random_video(movies, number_of_videos)
+        open_video_with_medial_player(movies_to_play)
 
 
 def play_series(directory, number_of_videos):
@@ -61,18 +61,18 @@ def play_series(directory, number_of_videos):
         open_video_with_medial_player(random_episodes)
 
 
-def play(source, number_of_videos, video_type):
+def play(source, number_of_videos, video_type, filter):
     if video_type == "MOVIE":
-        play_movie(source, number_of_videos)
+        play_movie(source, number_of_videos, filter)
     elif video_type == "SERIES":
         play_series(source, number_of_videos)
 
 
-def main(directory, video_type, action, number_of_videos):
-    if (action == ActionType.PLAY):
-        play(directory, number_of_videos, video_type)
-    elif (action == ActionType.SHOW_INFO):
-        get_movie_info(directory)
+def main(file_path, video_type, action, number_of_videos, filter):
+    if action == ActionType.PLAY:
+        play(file_path, number_of_videos, video_type, filter)
+    elif action == ActionType.SHOW_INFO:
+        get_info(file_path)
 
 
 if __name__ == "__main__":
@@ -83,12 +83,14 @@ if __name__ == "__main__":
     parser.add_argument("-s", "--series", action="store_true", help="Expects series organized in seasons folders")
     parser.add_argument("-n", "--number", type=int, default=1, help="Number of random videos to open")
     parser.add_argument("-i", "--info", action="store_true", help="Get movie info")
+    parser.add_argument("-f", "--filter", type=str, help="Filter filed (e.g \"genres: drama\")")
 
     args = parser.parse_args()
     if args.series:
         medium = "SERIES"
 
     action = ActionType.PLAY if not args.info else ActionType.SHOW_INFO
+    filter = args.filter if (action == ActionType.PLAY and args.filter) else ""
 
-    main(args.dir, medium, action, args.number)
+    main(args.dir, medium, action, args.number, filter)
 

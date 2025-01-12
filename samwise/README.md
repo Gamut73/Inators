@@ -32,7 +32,7 @@ The script uses the following functions from `file_mover.py`:
 
 ## Requirements
 
-- Python 3
+- Python 3 
 - `os` and `shutil` Python libraries
 
 ## TODO
