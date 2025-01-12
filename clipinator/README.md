@@ -42,6 +42,11 @@ You can generate a template csv file in the format of the above csv file by runn
 
 ```clipinator -t "Peep Show [S01E04]"``` will create and open the file ```{clips_dir}/Timestamps/Peep Show [S01E04].csv```
 
+
+# Subtitles
+You can either provide a subtitle file with the ```-s``` flag and a .srt file as the value or use ```-es``` if the 
+video has an embedded subtitle file that can be used.
+
 # Requirements
 
 See requirements.txt
