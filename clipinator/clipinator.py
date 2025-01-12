@@ -1,16 +1,19 @@
 import argparse
-import re
 import csv
-from send2trash import send2trash
+import re
+import shlex
 
+from bs4 import BeautifulSoup
 from moviepy.editor import *
 from moviepy.video.tools.subtitles import SubtitlesClip
+from send2trash import send2trash
 
 TIMESTAMPS_FOLDER = 'Videos/Clips/Timestamps'
 CSV_FILE_EDITOR = 'libreoffice'
 
+
 def clip_video(input_file_path, clip_name, start_time, end_time, output_dir, subtitles_file_path):
-    if os.path.exists(output_dir) == False:
+    if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
     og_vid_name = os.path.basename(input_file_path)
@@ -18,7 +21,7 @@ def clip_video(input_file_path, clip_name, start_time, end_time, output_dir, sub
 
     clip = VideoFileClip(input_file_path)
     if subtitles_file_path != '':
-        clip = _add_subtitiles(clip, subtitles_file_path)
+        clip = _add_subtitiles(clip, subtitles_file_path, clip.size[1])
 
     clip = clip.subclip(_convert_time_to_seconds(start_time), _convert_time_to_seconds(end_time))
     clip.write_videofile(clip_save_file_path)
@@ -45,7 +48,6 @@ def get_clips_from_csv_file(file_path):
 
 
 def generate_clips_csv_file_template(filename):
-
     folder_path = _create_folders_in_home(TIMESTAMPS_FOLDER)
     file_path = os.path.join(folder_path, filename + '.csv')
     header = ['start', 'end', 'title']
@@ -61,16 +63,21 @@ def _get_filename_from_path(file_path):
     return os.path.splitext(file_name_with_extension)[0]
 
 
-def _add_subtitiles(video_clip, subtitles_file_path):
+def _parse_html_to_text(html_content):
+    soup = BeautifulSoup(html_content, 'html.parser')
+    return soup.get_text()
+
+
+def _add_subtitiles(video_clip, subtitles_file_path, video_height):
     print("Subtitles file path: ", subtitles_file_path)
     generator = lambda txt: TextClip(
-        txt,
+        _parse_html_to_text(txt),
         font='Dejavu-Sans-Bold',
-        fontsize=72,
+        fontsize=int(video_height * 0.08),
         color='white',
         method='caption',
         stroke_color='black',
-        stroke_width=2,
+        stroke_width=1,
         align='South',
         size=video_clip.size
     )
@@ -119,16 +126,12 @@ def _build_clip_file_path(clip_name, og_vid_name, output_dir):
 
 
 def _get_save_path_as_list(input_string):
-    # Find all substrings within square brackets
     substrings = re.findall(r'\[(.*?)\]', input_string)
-
-    # Remove all substrings within square brackets from the input string
     cleaned_string = re.sub(r'\[.*?\]', '', input_string)
-
-    # Append the cleaned string to the list of substrings
     substrings.append(cleaned_string)
 
     return substrings
+
 
 def _convert_time_to_seconds(time):
     while (time.count(":") != 2):
@@ -138,30 +141,58 @@ def _convert_time_to_seconds(time):
     return int(time_split[0]) * 3600 + int(time_split[1]) * 60 + int(time_split[2])
 
 
+def _remove_font_size_from_subtitle_file(file_path):
+    with open(file_path, 'r') as file:
+        content = file.read()
+    content = re.sub(r'<font\b[^>]*\bsize="\d+"[^>]*>', lambda m: re.sub(r'\bsize="\d+"', '', m.group(0)), content)
+
+    with open(file_path, 'w') as file:
+        file.write(content)
+
+
+def _get_subtitle_file_path(embedded_subtitles, subtitles):
+    if embedded_subtitles is not None:
+        video_path = args.input_file_path
+        tmp_subtitle_path = os.path.join(os.getcwd(), "tmp_subtitle.srt")
+        os.system(
+            f"ffmpeg -i {shlex.quote(video_path)} -map 0:s:{embedded_subtitles}  -scodec subrip {shlex.quote(tmp_subtitle_path)}")
+        _remove_font_size_from_subtitle_file(tmp_subtitle_path)
+        return tmp_subtitle_path
+    return subtitles
+
+
 if __name__ == "__main__":
     default_output_dir = os.path.join(os.path.expanduser("~"), "Videos", "Clips")
 
     parser = argparse.ArgumentParser(description='Clip a video')
     parser.add_argument('input_file_path', nargs='?', default='', help="Name of the input file")
     parser.add_argument('start_time', nargs='?',
-                        default='',help="Start time of the clip in the format hh:mm:ss (e.g 10 is ten seconds, 00:10 is ten seconds, 21:00 is twenty one minutes, 00:21:00 is also twenty one minutes)")
+                        default='',
+                        help="Start time of the clip in the format hh:mm:ss (e.g 10 is ten seconds, 00:10 is ten seconds, 21:00 is twenty one minutes, 00:21:00 is also twenty one minutes)")
     parser.add_argument('end_time', nargs='?', default='', help="End time of the clip in the same format as start time")
     parser.add_argument('clip_name', nargs='?', default='', help="Name of the clip")
+
     parser.add_argument('-o', '--output_dir', default=default_output_dir,
                         help="Output directory. Creates a new directory if it doesn't exist. Default is the current directory")
+
     parser.add_argument('-s', '--subtitles', default='', help="Path to the subtitles file (.srt)")
+    parser.add_argument('-es', '--embedded_subtitles', nargs='?', const=0, type=int,
+                        help="Use subtitles embedded in the video file. Value is the index of the subtitle stream to use (default is 0)")
+
     parser.add_argument('-f', '--file', help="CSV file path containing clip details")
-    parser.add_argument('-t', '--template', help="Value is the filename of a csv that will be generated with the template for the clips")
+    parser.add_argument('-t', '--template',
+                        help="Value is the filename of a csv that will be generated with the template for the clips")
 
     args = parser.parse_args()
 
+    subtitles_file_path = _get_subtitle_file_path(args.embedded_subtitles, args.subtitles)
     if args.file:
         clip_multiple_clips_from_a_video(
             args.input_file_path,
             get_clips_from_csv_file(args.file),
             os.path.basename(args.file).split('.')[0],
             args.output_dir,
-            args.subtitles
+            subtitles_file_path
         )
         try:
             send2trash(args.file)
@@ -171,4 +202,12 @@ if __name__ == "__main__":
     elif args.template:
         generate_clips_csv_file_template(args.template)
     else:
-        clip_video(args.input_file_path, args.clip_name, args.start_time, args.end_time, args.output_dir, args.subtitles)
+        clip_video(args.input_file_path, args.clip_name, args.start_time, args.end_time, args.output_dir,
+                   subtitles_file_path)
+
+    if args.embedded_subtitles is not None:
+        try:
+            os.remove(subtitles_file_path)
+        except Exception as e:
+            print(f"!!!Failed to remove temporary subtitle file: because\n\t {e}!!!")
+            print(f"!!!Temporary subtitle file is located at {subtitles_file_path}!!!")
