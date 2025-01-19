@@ -1,2 +1,3 @@
 moviepy
 send2trash
+beautifulsoup4
