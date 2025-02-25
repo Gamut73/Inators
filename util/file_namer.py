@@ -35,10 +35,10 @@ def clean_series_dir(directory):
         video_files = _get_movies_in_dir(directory)
         if len(video_files) > 1:
             _clean_episode_names(directory, video_files)
+    print('* Done :-)')
 
 
 def _clean_series_folder_name(directory):
-    print(f"* Cleaning series folder name: {directory}")
     prompt = build_clean_series_folder_name_prompt(directory)
     response = _get_gemini_response(prompt)
     clean_titles = _build_json_object_for_rename_response(response)
@@ -57,9 +57,9 @@ def _clean_subdir_names(directory, subdirs):
     clean_titles = _build_json_object_for_rename_response(response)
 
     for clean_title in clean_titles:
+        print(f"- {clean_title['old']} --> {clean_title['new']}")
         new_dirname = os.path.join(directory, clean_title['new'])
         os.rename(os.path.join(directory, clean_title['old']), new_dirname)
-        print(f"- {clean_title['old']} --> {clean_title['new']}")
 
 
 def _clean_episode_names(subdir_path, video_files):
@@ -87,35 +87,25 @@ def _get_gemini_response(prompt):
 def _rename_file(filepath, new_filename):
     os.rename(filepath, new_filename)
 
+
 def _get_movies_in_dir(directory):
     filenames = os.listdir(directory)
     return [os.path.join(directory, filename) for filename in filenames if filename.endswith((".mp4", ".mkv", ".avi"))]
 
+
 def _build_json_object_for_rename_response(response):
     response_lines = response.strip().splitlines()
-    print(f"--- Response: {response}")
-    for response_line in response_lines:
-        print(f"---\t\t *: {response_line}")
     return [_build_json_object_for_rename_response_line(response_line) for response_line in response_lines]
 
 
 def _build_json_object_for_rename_response_line(response_line):
-    print(f"--- Response Line: {response_line}")
     old_name, new_name = response_line.split("||")
     return {"old": old_name, "new": new_name}
-    
 
 
 def get_cleaned_names_for_movie_files(movie_names):
-    _load_dotenv()
-
-    gemini_api_key = os.getenv('GEMINI_API_KEY')
-    genai.configure(api_key=gemini_api_key)
-    text_model = genai.GenerativeModel('gemini-2.0-flash')
-
     prompt = build_clean_movie_names_in_dir_prompt(movie_names)
-
-    response = text_model.generate_content(prompt)
+    response = _get_gemini_response(prompt)
     clean_titles = _build_json_object_for_rename_response(response.text.rstrip())
 
     return clean_titles
