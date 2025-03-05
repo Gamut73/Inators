@@ -1,10 +1,12 @@
+import argparse
 import os
 import random
 import subprocess
-import argparse
 from enum import Enum
 
-from IMDBService import get_info, get_info_by_source_dir
+from art import tprint
+
+from IMDBService import get_info
 
 MEDIA_PLAYER = 'vlc'
 
@@ -29,7 +31,7 @@ def pick_random_video(items, number_of_videos):
 
 
 def open_video_with_medial_player(video_files):
-    print(video_files)
+    tprint(f"Playing...")
     subprocess.call([MEDIA_PLAYER] + video_files)
 
 
@@ -63,7 +65,7 @@ def play_series(directory, number_of_videos):
 
 def play(source, number_of_videos, video_type, filter):
     if video_type == "MOVIE":
-        play_movie(source, number_of_videos, filter)
+        play_movie(source, number_of_videos)
     elif video_type == "SERIES":
         play_series(source, number_of_videos)
 
