@@ -106,7 +106,7 @@ def _build_json_object_for_rename_response_line(response_line):
 def get_cleaned_names_for_movie_files(movie_names):
     prompt = build_clean_movie_names_in_dir_prompt(movie_names)
     response = _get_gemini_response(prompt)
-    clean_titles = _build_json_object_for_rename_response(response.text.rstrip())
+    clean_titles = _build_json_object_for_rename_response(response.rstrip())
 
     return clean_titles
 

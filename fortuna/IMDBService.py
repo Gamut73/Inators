@@ -66,7 +66,8 @@ def _get_movie_info(filename, imdb_client=None):
 
         clean_move_name = get_cleaned_names_for_movie_files([filename])
         clean_movie_name_without_info = clean_move_name[0]['new'].split(' (')[0]
-        movie_year = clean_move_name[0]['new'].split(' (')[1].split(')')[0]
+        movie_year = clean_move_name[0]['new'].split(' (')[1].split(')')[0] if ' (' in clean_move_name[0]['new'] else\
+            None
 
         imdb_response = imdb.get_by_name(
             clean_movie_name_without_info,
