@@ -3,11 +3,11 @@ import argparse
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from util.file_namer import clean_movie_names_in_dir, clean_list_of_movie_files
+from util.file_namer import clean_movie_names_in_dir, clean_list_of_movie_files, clean_movie_name, clean_series_dir
 from util.file_mover import move_subtitles, move_movie, remove_source_dir, is_video_file
 
 
-def move_movie_downloads(source_dirs):
+def move_movies(source_dirs):
     newly_moved_movies = []
 
     for source_dir in source_dirs:
@@ -20,19 +20,26 @@ def move_movie_downloads(source_dirs):
 
     clean_list_of_movie_files(newly_moved_movies)
 
-def main(source_dirs, action):
-    if action == "move_movie_downloads" or action == "mmd":
-        move_movie_downloads(source_dirs)
-    elif action == "clean_movie_dir_names" or action == "cmdn":
-        for source_dir in source_dirs:
-            clean_movie_names_in_dir(source_dir)    
+
+def main(filepaths, action):
+    if action == "move_movies" or action == "mm":
+        move_movies(filepaths)
+    elif action == "clean_movie_names" or action == "cmn":
+        for filepath in filepaths:
+            if os.path.isdir(filepath):
+                clean_movie_names_in_dir(filepath)
+            else:
+                clean_movie_name(filepath)
+    elif action == "clean_series_dir" or action == "csd":
+        for filepath in filepaths:
+            clean_series_dir(filepath)
     else:
         print("Invalid action")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Move movie and subtitles to the correct directories')
-    parser.add_argument('action', type=str, default='move', help='The action to perform[move_movie_downloads(mmd), clean_movie_dir_names(cmdn)]')
+    parser.add_argument('action', type=str, default='move', help='The action to perform[move_movies(mm), clean_movie_names(cmn)]')
     parser.add_argument('source_dirs', type=str, nargs='+', help='The source directory(s) to process')
 
     args = parser.parse_args()
