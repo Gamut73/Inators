@@ -91,7 +91,7 @@ def _get_movie_info(filename, imdb_client=None):
 def _map_imdb_response_to_db_format(imdb_response, source_dir, filename):
     return {
         TITLE_KEY: imdb_response["name"],
-        YEAR_KEY: imdb_response["datePublished"].split("-")[0],
+        YEAR_KEY: imdb_response["datePublished"].split("-")[0] if imdb_response["datePublished"] is not None else "?",
         DESCRIPTION_KEY: imdb_response["description"] if imdb_response["description"] is not None else "",
         DIRECTOR_KEY: _map_director_to_db_format(imdb_response["director"]),
         RATING_KEY: imdb_response["rating"]["ratingValue"] if imdb_response["rating"] is not None else "?",

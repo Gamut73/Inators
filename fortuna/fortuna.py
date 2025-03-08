@@ -63,14 +63,14 @@ def play_series(directory, number_of_videos):
         open_video_with_medial_player(random_episodes)
 
 
-def play(source, number_of_videos, video_type, filter):
+def play(source, number_of_videos, video_type):
     if video_type == "MOVIE":
         play_movie(source, number_of_videos)
     elif video_type == "SERIES":
         play_series(source, number_of_videos)
 
 
-def main(file_path, video_type, action, number_of_videos, filter):
+def main(file_path, video_type, action, number_of_videos):
     if action == ActionType.PLAY:
         play(file_path, number_of_videos, video_type, filter)
     elif action == ActionType.SHOW_INFO:
@@ -85,7 +85,6 @@ if __name__ == "__main__":
     parser.add_argument("-s", "--series", action="store_true", help="Expects series organized in seasons folders")
     parser.add_argument("-n", "--number", type=int, default=1, help="Number of random videos to open")
     parser.add_argument("-i", "--info", action="store_true", help="Get movie info")
-    parser.add_argument("-f", "--filter", type=str, help="Filter filed (e.g \"genres: drama\")")
 
     args = parser.parse_args()
     if args.series:
@@ -94,5 +93,5 @@ if __name__ == "__main__":
     action = ActionType.PLAY if not args.info else ActionType.SHOW_INFO
     filter = args.filter if (action == ActionType.PLAY and args.filter) else ""
 
-    main(args.dir, medium, action, args.number, filter)
+    main(args.dir, medium, action, args.number)
 
