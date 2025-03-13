@@ -37,7 +37,7 @@ def pick_random_video(items, number_of_videos):
 def open_video_with_medial_player(video_files):
     tprint(f"Playing...")
     with open(os.devnull, 'w') as devnull:
-        subprocess.call([MEDIA_PLAYER] + video_files, stdout=devnull)
+        subprocess.call([MEDIA_PLAYER] + video_files, stdout=devnull, stderr=devnull)
 
 
 def play_movie(dir, number_of_videos, movie_filters):
