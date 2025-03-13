@@ -24,3 +24,8 @@ class JsonDatabase:
 
     def search_by_key(self, key, value):
         return self.db.reSearch(key, re.escape(value))
+
+
+if __name__ == "__main__":
+    db = JsonDatabase('/home/walter/Videos/Eiga/fortuna/imdb_cache.json')
+    print(db.search_by_key('genre', 'Comedy'))

@@ -2,7 +2,6 @@ import json
 import os
 import sys
 
-
 from PyMovieDb import IMDB
 
 # Add the parent directory of both folders to the Python path
@@ -18,8 +17,27 @@ db = JsonDatabase(IMDB_DB_FILE_PATH)
 
 
 def get_movie_files_by_filters(filters):
-    filter_dict = _get_filter_map(filters)
+    return [movie[FILENAME_KEY] for movie in get_movie_info_by_filters(filters)]
 
+
+def get_movie_info_by_filters(filters):
+    if filters is None:
+        return db.get_all()
+
+    movies = []
+    filter_dict = _get_filter_map(filters)
+    print(f"Searching for movies with filters: {filter_dict}")
+    cached_movies = db.get_all()
+    if filter_dict is None:
+        print("Invalid filters, return all cached movies")
+        return cached_movies
+
+    for movie in cached_movies:
+        if all(movie.get(item[0], '') is not None and item[1].lower() in movie.get(item[0], '').lower() for item in filter_dict.items()):
+            print(f"- Found movie: {movie[TITLE_KEY]}")
+            movies.append(movie)
+
+    return movies
 
 
 def _get_filter_map(filters):
@@ -34,8 +52,8 @@ def _get_filter_map(filters):
             print(f"Invalid filter key: {key}")
             continue
 
-        keys.append(key)
-        values.append(value)
+        keys.append(key.lower())
+        values.append(value.lower())
 
     return dict(zip(keys, values))
 
@@ -51,7 +69,7 @@ def get_info(file_path):
         _get_movie_info_from_a_dir(file_path)
 
 
-def _get_movie_info_from_a_dir(directory):
+def _get_movie_info_from_a_dir(directory, filters=None):
     filenames = get_all_video_files(directory)
 
     for filename in filenames:
@@ -85,7 +103,7 @@ def _get_movie_info(filename, imdb_client=None):
         db.add(imdb_cache[0])
 
     for movie in imdb_cache:
-        _print_info(movie)
+        print_movie_info(movie)
 
 
 def _map_imdb_response_to_db_format(imdb_response, source_dir, filename):
@@ -96,7 +114,7 @@ def _map_imdb_response_to_db_format(imdb_response, source_dir, filename):
         DIRECTOR_KEY: _map_director_to_db_format(imdb_response["director"]),
         RATING_KEY: imdb_response["rating"]["ratingValue"] if imdb_response["rating"] is not None else "?",
         GENRE_KEY: _map_list_to_string(imdb_response["genre"]),
-        KEYWORDS_KEY: imdb_response["keywords"],
+        KEYWORDS_KEY: imdb_response["keywords"] if imdb_response["keywords"] is not None else "",
         POSTER_URL_KEY: imdb_response["poster"],
         SOURCE_DIR_KEY: source_dir,
         FILENAME_KEY: filename
@@ -120,15 +138,19 @@ def _search_imdb_cache_for_movie(db, filename):
     return key
 
 
-def _print_info(movie_details):
+def print_movie_info(movie_details):
     title = movie_details[TITLE_KEY]
     year = movie_details[YEAR_KEY]
     description = movie_details[DESCRIPTION_KEY]
     desc_print = f'\n\t- {description}' if description != "" else "<No description found>"
     rating = f'{movie_details[RATING_KEY]}',
     director = f" , dir: {movie_details[DIRECTOR_KEY]}," if movie_details[DIRECTOR_KEY] is not None else ""
-    genre = f'\n\t- Genres: {movie_details[GENRE_KEY]}' if movie_details[GENRE_KEY] is not None else ""
-    keywords = f'\n\t- Keywords: {movie_details[KEYWORDS_KEY]}' if movie_details[KEYWORDS_KEY] is not None else ""
-    filepath = f'\n\t- Filepath: {os.path.join(movie_details[SOURCE_DIR_KEY], movie_details[FILENAME_KEY])}'
+    genre = f'\n\t- genre: {movie_details[GENRE_KEY]}' if movie_details[GENRE_KEY] is not None else ""
+    keywords = f'\n\t- keywords: {movie_details[KEYWORDS_KEY]}' if movie_details[KEYWORDS_KEY] is not None else ""
+    filepath = f'\n\t- filepath: {os.path.join(movie_details[SOURCE_DIR_KEY], movie_details[FILENAME_KEY])}'
 
     print(f'* {title} ({year}) {director} [{rating}/10] {desc_print} {genre} {keywords} {filepath}')
+
+
+if __name__ == "__main__":
+    print(get_movie_files_by_filters("genre:Comedy,keywords:female"))
