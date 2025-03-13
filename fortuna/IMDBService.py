@@ -33,8 +33,8 @@ def get_movie_info_by_filters(filters):
         return cached_movies
 
     for movie in cached_movies:
-        if all(movie.get(item[0], '') is not None and item[1].lower() in movie.get(item[0], '').lower() for item in filter_dict.items()):
-            print(f"- Found movie: {movie[TITLE_KEY]}")
+        if all(movie.get(item[0], '') is not None and item[1].lower() in movie.get(item[0], '').lower() for item in
+               filter_dict.items()):
             movies.append(movie)
 
     return movies
