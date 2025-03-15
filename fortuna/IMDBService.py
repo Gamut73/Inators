@@ -7,11 +7,10 @@ from PyMovieDb import IMDB
 # Add the parent directory of both folders to the Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from util.file_mover import  get_all_video_files, is_video_file
+from util.file_mover import get_all_video_files, is_video_file
 from util.file_namer import get_cleaned_names_for_movie_files
 from util.JsonDatabase import JsonDatabase
 from IMDBCacheConstants import *
-
 
 db = JsonDatabase(IMDB_DB_FILE_PATH)
 
@@ -84,7 +83,7 @@ def _get_movie_info(filename, imdb_client=None):
 
         clean_move_name = get_cleaned_names_for_movie_files([filename])
         clean_movie_name_without_info = clean_move_name[0]['new'].split(' (')[0]
-        movie_year = clean_move_name[0]['new'].split(' (')[1].split(')')[0] if ' (' in clean_move_name[0]['new'] else\
+        movie_year = clean_move_name[0]['new'].split(' (')[1].split(')')[0] if ' (' in clean_move_name[0]['new'] else \
             None
 
         imdb_response = imdb.get_by_name(
@@ -95,7 +94,9 @@ def _get_movie_info(filename, imdb_client=None):
         res = json.loads(imdb_response)
 
         if 'status' in res:
-            print(f"Failed to get info for {filename} with response from IMDB: {res['status']} - {res['message']}")
+            print(
+                f"{PrintColors.WARNING}Failed to get info for {filename}. Consider renaming the file to make it "
+                f"easier for the IMDB api {PrintColors.ENDC}")
             return
 
         file_dir = os.path.join(os.getcwd(), os.path.dirname(filename))
@@ -139,18 +140,59 @@ def _search_imdb_cache_for_movie(db, filename):
 
 
 def print_movie_info(movie_details):
-    title = movie_details[TITLE_KEY]
-    year = movie_details[YEAR_KEY]
-    description = movie_details[DESCRIPTION_KEY]
-    desc_print = f'\n\t- {description}' if description != "" else "<No description found>"
-    rating = f'{movie_details[RATING_KEY]}',
-    director = f" , dir: {movie_details[DIRECTOR_KEY]}," if movie_details[DIRECTOR_KEY] is not None else ""
-    genre = f'\n\t- genre: {movie_details[GENRE_KEY]}' if movie_details[GENRE_KEY] is not None else ""
-    keywords = f'\n\t- keywords: {movie_details[KEYWORDS_KEY]}' if movie_details[KEYWORDS_KEY] is not None else ""
-    filepath = f'\n\t- filepath: {os.path.join(movie_details[SOURCE_DIR_KEY], movie_details[FILENAME_KEY])}'
+    title = PrintColors.apply_header(movie_details[TITLE_KEY])
+    title = PrintColors.apply_bold(title)
+    year = f"({movie_details[YEAR_KEY]})"
+    description = PrintColors.apply_bold(movie_details[DESCRIPTION_KEY])
+    desc_print = f'\n\t- {description}' if description != "" else f"\n\t- <No description found>"
+    rating = f'{movie_details[RATING_KEY]}'
+    director = f" , {PrintColors.apply_underline('dir:')} {movie_details[DIRECTOR_KEY]}," if movie_details[DIRECTOR_KEY] is not None else ""
+    genre = f'\n\t- {PrintColors.apply_underline("genre:")} {movie_details[GENRE_KEY]}' if movie_details[GENRE_KEY] is not None else ""
+    keywords = f'\n\t- {PrintColors.apply_underline("keywords:")} {movie_details[KEYWORDS_KEY]}' if movie_details[KEYWORDS_KEY] is not None else ""
+    filepath = f'\n\t- {PrintColors.apply_underline("filepath:")} {os.path.join(movie_details[SOURCE_DIR_KEY], movie_details[FILENAME_KEY])}'
 
-    print(f'* {title} ({year}) {director} [{rating}/10] {desc_print} {genre} {keywords} {filepath}')
+    print(f'\n* {title} {year} {director} [{rating}/10] {desc_print} {genre} {keywords} {filepath}')
 
 
-if __name__ == "__main__":
-    print(get_movie_files_by_filters("genre:Comedy,keywords:female"))
+class PrintColors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+    ITALICS = '\033[3m'
+
+    @staticmethod
+    def apply_header(text):
+        return f"{PrintColors.HEADER}{text}{PrintColors.ENDC}"
+
+    @staticmethod
+    def apply_okblue(text):
+        return f"{PrintColors.OKBLUE}{text}{PrintColors.ENDC}"
+
+    @staticmethod
+    def apply_okgreen(text):
+        return f"{PrintColors.OKGREEN}{text}{PrintColors.ENDC}"
+
+    @staticmethod
+    def apply_warning(text):
+        return f"{PrintColors.WARNING}{text}{PrintColors.ENDC}"
+
+    @staticmethod
+    def apply_fail(text):
+        return f"{PrintColors.FAIL}{text}{PrintColors.ENDC}"
+
+    @staticmethod
+    def apply_bold(text):
+        return f"{PrintColors.BOLD}{text}{PrintColors.ENDC}"
+
+    @staticmethod
+    def apply_underline(text):
+        return f"{PrintColors.UNDERLINE}{text}{PrintColors.ENDC}"
+
+    @staticmethod
+    def apply_italics(text):
+        return f"{PrintColors.ITALICS}{text}{PrintColors.ENDC}"
