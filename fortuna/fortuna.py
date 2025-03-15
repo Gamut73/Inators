@@ -19,6 +19,24 @@ class ActionType(Enum):
     LIST_FIELDS = "LIST_FIELDS"
 
 
+def get_field_value_counts(field_name):
+    movies = get_movie_info_by_filters(None)
+    value_counts = {}
+
+    for movie in movies:
+        if field_name in movie and movie[field_name]:
+            if isinstance(movie[field_name], str) and ',' in movie[field_name]:
+                values = [v.strip() for v in movie[field_name].split(',')]
+                for value in values:
+                    value_lower = value.lower()
+                    value_counts[value_lower] = value_counts.get(value_lower, 0) + 1
+            else:
+                value_lower = movie[field_name].lower()
+                value_counts[value_lower] = value_counts.get(value_lower, 0) + 1
+
+    return value_counts
+
+
 def get_all_folders(directory):
     return [name for name in os.listdir(directory) if os.path.isdir(os.path.join(directory, name))]
 
@@ -83,7 +101,7 @@ def play(source, number_of_videos, video_type, filters):
         play_series(source, number_of_videos)
 
 
-def main(file_path, video_type, action, number_of_videos, filters):
+def main(file_path, video_type, action, number_of_videos, filters, field_name=None):
     if action == ActionType.PLAY:
         play(file_path, number_of_videos, video_type, filters)
     elif action == ActionType.SHOW_INFO:
@@ -93,13 +111,25 @@ def main(file_path, video_type, action, number_of_videos, filters):
         for movie in movies:
             print_movie_info(movie)
     elif action == ActionType.LIST_FIELDS:
-        for field in IMDB_CACHE_KEY_LIST:
-            print(field)
+        if field_name:
+            if field_name not in IMDB_CACHE_KEY_LIST:
+                print(f"Field '{field_name}' is not valid. Available fields are:")
+                for field in IMDB_CACHE_KEY_LIST:
+                    print(field)
+            else:
+                value_counts = get_field_value_counts(field_name)
+                if not value_counts:
+                    print(f"No values found for field '{field_name}'")
+                else:
+                    print(f"Values for '{field_name}':")
+                    for value, count in sorted(value_counts.items()):
+                        print(f"- {value}: {count}")
 
 
 if __name__ == "__main__":
     medium = "MOVIE"
     action = ActionType.PLAY
+    field_name = None
 
     parser = argparse.ArgumentParser(description="Open a random video file from within a directory")
     parser.add_argument("dir", help="The source directory")
@@ -108,7 +138,8 @@ if __name__ == "__main__":
     parser.add_argument("-i", "--info", action="store_true", help="Get movie info")
     parser.add_argument("-f", "--filters", type=str, default=None, help="Filter for cached movies")
     parser.add_argument("-l", "--list", action="store_true", help="List all cached movies")
-    parser.add_argument("-lf", "--list_fields", action="store_true", help="List all fields you can filter by")
+    parser.add_argument("-lf", "--list_fields", nargs='?', const=True,
+                        help="List all fields you can filter by or get value counts for a specific field")
 
     args = parser.parse_args()
     if args.series:
@@ -120,8 +151,10 @@ if __name__ == "__main__":
         action = ActionType.LIST
     elif args.list_fields:
         action = ActionType.LIST_FIELDS
+        if args.list_fields is not True:  # If a field name was provided
+            field_name = args.list_fields.lower()
 
     filters = args.filters if (args.filters is not None) else None
 
-    main(args.dir, medium, action, args.number, filters)
+    main(args.dir, medium, action, args.number, filters, field_name)
 
