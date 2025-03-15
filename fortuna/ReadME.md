@@ -24,4 +24,12 @@ If you expect series organized in seasons folders, use the `-s` or `--series` fl
   separating them with a comma. For example: `genre:comedy,keywords:japanese`. Use the `-lf` or `--list_fields` flag to
   see all fields you can filter by.
 - `-l` or `--list`: List all cached movies that have information. Can be filtered using the `-f` or `--filters` flag.
-- `-lf` or `--list_fields`: List all fields you can filter by.
+- `-lf` or `--list_fields`: Without arguments, lists all fields you can filter by. When provided with a field name (e.g., `-lf genre`), displays counts of all unique values for that field in the IMDB cache. For example, running `python fortuna.py -lf genre` will show all unique genre values and how many movies match each genre, like:
+  ```
+  Values for 'genre':
+  - action: 22
+  - comedy: 12
+  - fantasy: 10
+  - scifi: 1
+  ```
+  The matching is case insensitive, so "Comedy" and "comedy" are counted as the same value.
