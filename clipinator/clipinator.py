@@ -1,5 +1,6 @@
 import argparse
 import csv
+import os.path
 import re
 import shlex
 
@@ -11,8 +12,11 @@ from send2trash import send2trash
 TIMESTAMPS_FOLDER = 'Videos/Clips/Timestamps'
 CSV_FILE_EDITOR = 'libreoffice'
 
+TMP_AUDIO_PATH = os.path.join(os.getcwd(), "tmp_audio.mp3")
+TMP_SUBTITLES_PATH = os.path.join(os.getcwd(), "tmp_subtitle.srt")
 
-def clip_video(input_file_path, clip_name, start_time, end_time, output_dir, subtitles_file_path):
+
+def clip_video(input_file_path, clip_name, start_time, end_time, output_dir, subtitles_filepath, audio_track_index):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
@@ -20,8 +24,11 @@ def clip_video(input_file_path, clip_name, start_time, end_time, output_dir, sub
     clip_save_file_path = _build_clip_file_path(clip_name, og_vid_name, output_dir)
 
     clip = VideoFileClip(input_file_path)
-    if subtitles_file_path != '':
-        clip = _add_subtitiles(clip, subtitles_file_path, clip.size[1])
+    if subtitles_filepath != '':
+        clip = _add_subtitles(clip, subtitles_filepath, clip.size[1])
+
+    if audio_track_index is not None and audio_track_index != 0:
+        clip = _set_alternative_audio_track(clip, input_file_path, audio_track_index)
 
     clip = clip.subclip(_convert_time_to_seconds(start_time), _convert_time_to_seconds(end_time))
     clip.write_videofile(clip_save_file_path)
@@ -58,6 +65,12 @@ def generate_clips_csv_file_template(filename):
     _open_csv_editor(file_path)
 
 
+def _set_alternative_audio_track(clip, video_filepath, audio_track_index):
+    os.system(f"ffmpeg -i {shlex.quote(video_filepath)} -map 0:a:{audio_track_index} -ab 160k -ac 2 -ar 44100 -vn -loglevel error {shlex.quote(TMP_AUDIO_PATH)}")
+
+    audio_clip = AudioFileClip(TMP_AUDIO_PATH)
+    return clip.set_audio(audio_clip)
+
 def _get_filename_from_path(file_path):
     file_name_with_extension = os.path.basename(file_path)
     return os.path.splitext(file_name_with_extension)[0]
@@ -68,7 +81,7 @@ def _parse_html_to_text(html_content):
     return soup.get_text()
 
 
-def _add_subtitiles(video_clip, subtitles_file_path, video_height):
+def _add_subtitles(video_clip, subtitles_file_path, video_height):
     print("Subtitles file path: ", subtitles_file_path)
     generator = lambda txt: TextClip(
         _parse_html_to_text(txt),
@@ -153,11 +166,10 @@ def _remove_font_size_from_subtitle_file(file_path):
 def _get_subtitle_file_path(embedded_subtitles, subtitles):
     if embedded_subtitles is not None:
         video_path = args.input_file_path
-        tmp_subtitle_path = os.path.join(os.getcwd(), "tmp_subtitle.srt")
         os.system(
-            f"ffmpeg -i {shlex.quote(video_path)} -map 0:s:{embedded_subtitles}  -scodec subrip {shlex.quote(tmp_subtitle_path)}")
-        _remove_font_size_from_subtitle_file(tmp_subtitle_path)
-        return tmp_subtitle_path
+            f"ffmpeg -i {shlex.quote(video_path)} -map 0:s:{embedded_subtitles}  -scodec subrip -loglevel error {shlex.quote(TMP_SUBTITLES_PATH)}")
+        _remove_font_size_from_subtitle_file(TMP_SUBTITLES_PATH)
+        return TMP_SUBTITLES_PATH
     return subtitles
 
 
@@ -177,7 +189,13 @@ if __name__ == "__main__":
 
     parser.add_argument('-s', '--subtitles', default='', help="Path to the subtitles file (.srt)")
     parser.add_argument('-es', '--embedded_subtitles', nargs='?', const=0, type=int,
-                        help="Use subtitles embedded in the video file. Value is the index of the subtitle stream to use (default is 0)")
+                        help="Use subtitles embedded in the video file. Value is the index of the subtitle stream to "
+                             "use (default is 0)")
+
+    parser.add_argument('-ea', '--embedded_audio', nargs='?', const=0, type=int, help="Use audio embedded in the "
+                                                                                      "video file. Value is the index "
+                                                                                      "of the audio stream to use ("
+                                                                                      "default is 0)")
 
     parser.add_argument('-f', '--file', help="CSV file path containing clip details")
     parser.add_argument('-t', '--template',
@@ -203,11 +221,18 @@ if __name__ == "__main__":
         generate_clips_csv_file_template(args.template)
     else:
         clip_video(args.input_file_path, args.clip_name, args.start_time, args.end_time, args.output_dir,
-                   subtitles_file_path)
+                   subtitles_file_path, args.embedded_audio)
 
-    if args.embedded_subtitles is not None:
+    if os.path.exists(TMP_SUBTITLES_PATH):
         try:
-            os.remove(subtitles_file_path)
+            os.remove(TMP_SUBTITLES_PATH)
         except Exception as e:
             print(f"!!!Failed to remove temporary subtitle file: because\n\t {e}!!!")
-            print(f"!!!Temporary subtitle file is located at {subtitles_file_path}!!!")
+            print(f"!!!Temporary subtitle file is located at {TMP_SUBTITLES_PATH}!!!")
+
+    if os.path.exists(TMP_AUDIO_PATH):
+        try:
+            os.remove(TMP_AUDIO_PATH)
+        except Exception as e:
+            print(f"!!!Failed to remove temporary subtitle file: because\n\t {e}!!!")
+            print(f"!!!Temporary subtitle file is located at {TMP_AUDIO_PATH}!!!")
