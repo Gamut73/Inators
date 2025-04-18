@@ -34,11 +34,11 @@ def clip_video(input_file_path, clip_name, start_time, end_time, output_dir, sub
     clip.write_videofile(clip_save_file_path)
 
 
-def clip_multiple_clips_from_a_video(input_file_path, clips, clips_parent_folder_name, output_dir, subtitles_file_path):
+def clip_multiple_clips_from_a_video(input_file_path, clips, clips_parent_folder_name, output_dir, subtitles_file_path, audio_track_index):
     clean_clips_parent_folder_name = clips_parent_folder_name.split('(')[0].strip()
     clips_parent_folder = os.path.join(output_dir, clean_clips_parent_folder_name)
     for clip in clips:
-        clip_video(input_file_path, clip['title'], clip['start'], clip['end'], clips_parent_folder, subtitles_file_path)
+        clip_video(input_file_path, clip['title'], clip['start'], clip['end'], clips_parent_folder, subtitles_file_path, audio_track_index)
 
 
 def get_clips_from_csv_file(file_path):
@@ -173,6 +173,21 @@ def _get_subtitle_file_path(embedded_subtitles, subtitles):
     return subtitles
 
 
+def _list_files_in_timestamps_folder():
+    folder_path = os.path.join(os.path.expanduser("~"), TIMESTAMPS_FOLDER)
+    if os.path.exists(folder_path):
+        files = os.listdir(folder_path)
+        if files:
+            print("* Files in the timestamps folder:")
+            for file in files:
+                if file.endswith('.csv'):
+                    print(f"  - {os.path.splitext(file)[0]}")
+        else:
+            print("No files found in the timestamps folder.")
+    else:
+        print(f"The timestamps folder does not exist at {folder_path}.")
+
+
 if __name__ == "__main__":
     default_output_dir = os.path.join(os.path.expanduser("~"), "Videos", "Clips")
 
@@ -200,6 +215,7 @@ if __name__ == "__main__":
     parser.add_argument('-f', '--file', help="CSV file path containing clip details")
     parser.add_argument('-t', '--template',
                         help="Value is the filename of a csv that will be generated with the template for the clips")
+    parser.add_argument('-ltf', '--list_timestamp_files', help="List all the template files in the timestamps folder", action='store_true')
 
     args = parser.parse_args()
 
@@ -210,7 +226,8 @@ if __name__ == "__main__":
             get_clips_from_csv_file(args.file),
             os.path.basename(args.file).split('.')[0],
             args.output_dir,
-            subtitles_file_path
+            subtitles_file_path,
+            args.embedded_audio
         )
         try:
             send2trash(args.file)
@@ -219,6 +236,8 @@ if __name__ == "__main__":
             print(f"Failed to move {args.file} to trash: because\n\t {e}")
     elif args.template:
         generate_clips_csv_file_template(args.template)
+    elif args.list_timestamp_files:
+        _list_files_in_timestamps_folder()
     else:
         clip_video(args.input_file_path, args.clip_name, args.start_time, args.end_time, args.output_dir,
                    subtitles_file_path, args.embedded_audio)

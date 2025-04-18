@@ -22,10 +22,11 @@ Optional arguments:
   Optional index specifies which subtitle track to use (default: 0).
 - `-ea, --embedded_audio [index]`: Use a specific audio track from the video file.
   Optional index specifies which audio track to use (default: 0).
-- `-f, --file`: Path to a CSV file containing multiple clip definitions to process in batch.
+- `-f, --file`: Name of the CSV file containing multiple clip definitions to process in batch. The script will search for the filename in the `Timestamps` directory.
   The original CSV file will be moved to trash after successful processing.
 - `-t, --template`: Generate a CSV template file with the given name in `~/Videos/Clips/Timestamps/`.
-- `-h, --he
+- `-ltf, --list_timestamp_files`: List all timestamp files' names in the `Timestamps` directory.
+- `-h, --help`: Show help message and exit.
 
 # Grouping clips
 
@@ -37,7 +38,7 @@ It is optional, i.e not including an groups will save the file at ```{clips_dir}
 # CSV file
 
 Input can be provided in a csv file and ran with the ```-f``` flag. For example:
-```clipinator /path/to/video -f /path/to/csv/file.csv```
+```clipinator /path/to/video -f <name-of-csv-file-in-Timestamps-folder>```
 You can provide a csv file with the following format and headings:
 
 ```
@@ -50,7 +51,7 @@ your benefit**
 
 ### Example
 
-```clipinator ./"Peep Show S02E04.mp4" -f "Peep Show (S02E04).csv"```
+```clipinator ./"Peep Show S02E04.mp4" -f "Peep Show (S02E04)"```
 will create a folder called `{clips_dir}/Peep Show` and save the clips in that folder
 
 # Template
