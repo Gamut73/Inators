@@ -41,8 +41,9 @@ def clip_multiple_clips_from_a_video(input_file_path, clips, clips_parent_folder
         clip_video(input_file_path, clip['title'], clip['start'], clip['end'], clips_parent_folder, subtitles_file_path, audio_track_index)
 
 
-def get_clips_from_csv_file(file_path):
-    with open(file_path, 'r') as file:
+def get_clips_from_csv_file(filename):
+    filepath = _find_timestamps_file_in_timestamps_folder(filename)
+    with open(filepath, 'r') as file:
         csv_reader = csv.DictReader(file)
         clips = []
         for row in csv_reader:
@@ -52,6 +53,18 @@ def get_clips_from_csv_file(file_path):
                 'title': row['title'],
             })
     return clips
+
+
+def _find_timestamps_file_in_timestamps_folder(filename):
+    timestamps_folder = os.path.join(os.path.expanduser("~"), TIMESTAMPS_FOLDER)
+    if os.path.exists(timestamps_folder):
+        file_path = os.path.join(timestamps_folder, filename + '.csv')
+        if os.path.exists(file_path):
+            return file_path
+        else:
+            print(f"File {filename}.csv does not exist in the timestamps folder.")
+    else:
+        print(f"The timestamps folder does not exist at {timestamps_folder}.")
 
 
 def generate_clips_csv_file_template(filename):
@@ -212,7 +225,7 @@ if __name__ == "__main__":
                                                                                       "of the audio stream to use ("
                                                                                       "default is 0)")
 
-    parser.add_argument('-f', '--file', help="CSV file path containing clip details")
+    parser.add_argument('-f', '--file', help="CSV file name containing clip details expected to be found in the timestamps folder.")
     parser.add_argument('-t', '--template',
                         help="Value is the filename of a csv that will be generated with the template for the clips")
     parser.add_argument('-ltf', '--list_timestamp_files', help="List all the template files in the timestamps folder", action='store_true')
