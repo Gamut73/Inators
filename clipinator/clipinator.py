@@ -34,15 +34,16 @@ def clip_video(input_file_path, clip_name, start_time, end_time, output_dir, sub
     clip.write_videofile(clip_save_file_path)
 
 
-def clip_multiple_clips_from_a_video(input_file_path, clips, clips_parent_folder_name, output_dir, subtitles_file_path, audio_track_index):
+def clip_multiple_clips_from_a_video(input_file_path, clips, clips_parent_folder_name, output_dir, subtitles_file_path,
+                                     audio_track_index):
     clean_clips_parent_folder_name = clips_parent_folder_name.split('(')[0].strip()
     clips_parent_folder = os.path.join(output_dir, clean_clips_parent_folder_name)
     for clip in clips:
-        clip_video(input_file_path, clip['title'], clip['start'], clip['end'], clips_parent_folder, subtitles_file_path, audio_track_index)
+        clip_video(input_file_path, clip['title'], clip['start'], clip['end'], clips_parent_folder, subtitles_file_path,
+                   audio_track_index)
 
 
-def get_clips_from_csv_file(filename):
-    filepath = _find_timestamps_file_in_timestamps_folder(filename)
+def get_clips_from_csv_file(filepath):
     with open(filepath, 'r') as file:
         csv_reader = csv.DictReader(file)
         clips = []
@@ -79,10 +80,12 @@ def generate_clips_csv_file_template(filename):
 
 
 def _set_alternative_audio_track(clip, video_filepath, audio_track_index):
-    os.system(f"ffmpeg -i {shlex.quote(video_filepath)} -map 0:a:{audio_track_index} -ab 160k -ac 2 -ar 44100 -vn -loglevel error {shlex.quote(TMP_AUDIO_PATH)}")
+    if not os.path.exists(TMP_AUDIO_PATH):
+        os.system(f"ffmpeg -i {shlex.quote(video_filepath)} -map 0:a:{audio_track_index} -ab 160k -ac 2 -ar 44100 -vn -loglevel error {shlex.quote(TMP_AUDIO_PATH)}")
 
     audio_clip = AudioFileClip(TMP_AUDIO_PATH)
     return clip.set_audio(audio_clip)
+
 
 def _get_filename_from_path(file_path):
     file_name_with_extension = os.path.basename(file_path)
@@ -192,9 +195,10 @@ def _list_files_in_timestamps_folder():
         files = os.listdir(folder_path)
         if files:
             print("* Files in the timestamps folder:")
-            for file in files:
-                if file.endswith('.csv'):
-                    print(f"  - {os.path.splitext(file)[0]}")
+            filenames_to_print = [f for f in files if f.endswith('.csv')]
+            filenames_to_print.sort()
+            for file in filenames_to_print:
+                print(f"  - {os.path.splitext(file)[0]}")
         else:
             print("No files found in the timestamps folder.")
     else:
@@ -225,28 +229,36 @@ if __name__ == "__main__":
                                                                                       "of the audio stream to use ("
                                                                                       "default is 0)")
 
-    parser.add_argument('-f', '--file', help="CSV file name containing clip details expected to be found in the timestamps folder.")
+    parser.add_argument('-f', '--file',
+                        help="CSV file name containing clip details expected to be found in the timestamps folder.")
     parser.add_argument('-t', '--template',
                         help="Value is the filename of a csv that will be generated with the template for the clips")
-    parser.add_argument('-ltf', '--list_timestamp_files', help="List all the template files in the timestamps folder", action='store_true')
+    parser.add_argument('-ltf', '--list_timestamp_files', help="List all the template files in the timestamps folder",
+                        action='store_true')
 
     args = parser.parse_args()
 
+    if os.path.exists(TMP_AUDIO_PATH):
+        os.remove(TMP_AUDIO_PATH)
+    if os.path.exists(TMP_SUBTITLES_PATH):
+        os.remove(TMP_SUBTITLES_PATH)
+
     subtitles_file_path = _get_subtitle_file_path(args.embedded_subtitles, args.subtitles)
     if args.file:
+        timestamps_filepath = _find_timestamps_file_in_timestamps_folder(args.file)
         clip_multiple_clips_from_a_video(
             args.input_file_path,
-            get_clips_from_csv_file(args.file),
+            get_clips_from_csv_file(timestamps_filepath),
             os.path.basename(args.file).split('.')[0],
             args.output_dir,
             subtitles_file_path,
             args.embedded_audio
         )
         try:
-            send2trash(args.file)
-            print(f"Moved {args.file} to trash")
+            send2trash(timestamps_filepath)
+            print(f"Moved {timestamps_filepath} to trash")
         except Exception as e:
-            print(f"Failed to move {args.file} to trash: because\n\t {e}")
+            print(f"Failed to move {timestamps_filepath} to trash: because\n\t {e}")
     elif args.template:
         generate_clips_csv_file_template(args.template)
     elif args.list_timestamp_files:
