@@ -17,6 +17,7 @@ TMP_SUBTITLES_PATH = os.path.join(os.getcwd(), "tmp_subtitle.srt")
 
 
 def clip_video(input_file_path, clip_name, start_time, end_time, output_dir, subtitles_filepath, audio_track_index):
+    print(f"Clipping from {start_time} to {end_time} and saving it as {clip_name}")
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
@@ -97,9 +98,9 @@ def _parse_html_to_text(html_content):
     return soup.get_text()
 
 
-def _add_subtitles(video_clip, subtitles_file_path, video_height):
-    print("Subtitles file path: ", subtitles_file_path)
-    generator = lambda txt: TextClip(
+def _add_subtitles(video_clip, subtitles_file, video_height):
+    print("Subtitles file path: ", subtitles_file)
+    txt_clip_generator = lambda txt: TextClip(
         _parse_html_to_text(txt),
         font='Dejavu-Sans-Bold',
         fontsize=int(video_height * 0.08),
@@ -111,20 +112,28 @@ def _add_subtitles(video_clip, subtitles_file_path, video_height):
         size=video_clip.size
     )
 
-    _remove_trailing_empty_lines(subtitles_file_path)
-    subtitle_clip = SubtitlesClip(subtitles_file_path, generator)
+    _remove_all_empty_lines(subtitles_file)
+    subtitle_clip = SubtitlesClip(subtitles_file, txt_clip_generator)
     return CompositeVideoClip((video_clip, subtitle_clip.set_position(('center', 'bottom'))), size=video_clip.size)
 
 
-def _remove_trailing_empty_lines(file_path):
+def _remove_all_empty_lines(file_path):
     with open(file_path, 'r') as file:
         lines = file.readlines()
 
-    while lines and lines[-1].strip() == '':
-        lines.pop()
+    filtered_lines = []
+    for i in range(len(lines)):
+        if lines[i].strip():
+            filtered_lines.append(lines[i])
+        else:
+            if i == len(lines) - 1:
+                continue
+
+            if lines[i + 1].strip().isdigit():
+                filtered_lines.append(lines[i])
 
     with open(file_path, 'w') as file:
-        file.writelines(lines)
+        file.writelines(filtered_lines)
 
 
 def _create_folders_in_home(path):
