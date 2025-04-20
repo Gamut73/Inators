@@ -129,7 +129,7 @@ def _remove_all_empty_lines(file_path):
             if i == len(lines) - 1:
                 continue
 
-            if lines[i + 1].strip().isdigit():
+            if lines[i + 1].strip().isdigit() and i + 2 < len(lines) and "-->" in lines[i + 2]:
                 filtered_lines.append(lines[i])
 
     with open(file_path, 'w') as file:
