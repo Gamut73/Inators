@@ -4,4 +4,4 @@
 - Simply add it to .git/hooks/commit-msg of your git repo
 
 # keep_master.sh
-Deletes all local branches except the one you provide (e.g **main** or **master**)
+Deletes all local branches in a git repository except the one you provide (e.g **main** or **master**)
