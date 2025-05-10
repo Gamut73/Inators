@@ -1,5 +1,6 @@
 import os
 import re
+
 from pysondb import db
 
 
@@ -25,7 +26,12 @@ class JsonDatabase:
     def search_by_key(self, key, value):
         return self.db.reSearch(key, re.escape(value))
 
+    def delete_by_id(self, cached_movie_id):
+        return self.db.deleteById(cached_movie_id)
+
 
 if __name__ == "__main__":
     db = JsonDatabase('/home/walter/Videos/Eiga/fortuna/imdb_cache.json')
-    print(db.search_by_key('genre', 'Comedy'))
+    movies = db.search_by_key('genre', 'Comedy')
+    for movie in movies:
+        print(movie)

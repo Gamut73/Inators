@@ -9,8 +9,10 @@ KEYWORDS_KEY = 'keywords'
 SOURCE_DIR_KEY = 'source_dir'
 FILENAME_KEY = 'filename'
 POSTER_URL_KEY = 'poster_url'
+ID_KEY = 'id'
 
 IMDB_CACHE_KEY_LIST = [
+    ID_KEY,
     TITLE_KEY,
     YEAR_KEY,
     DESCRIPTION_KEY,

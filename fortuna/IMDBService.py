@@ -75,6 +75,16 @@ def _get_movie_info_from_a_dir(directory, filters=None):
     for filename in filenames:
         _get_movie_info(filename)
 
+    _delete_movies_from_db_not_in_dir(filenames)
+
+
+def _delete_movies_from_db_not_in_dir(movie_files):
+    all_movies = db.get_all()
+    for movie in all_movies:
+        if movie[FILENAME_KEY] not in movie_files:
+            db.delete_by_id(movie[ID_KEY])
+            print(f"Deleted {PrintColors.apply_warning(movie[FILENAME_KEY])} from the movies database.")
+
 
 def _get_movie_info(filename, imdb_client=None):
     imdb_cache = _search_imdb_cache_for_movie(db, filename)
