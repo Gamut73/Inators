@@ -26,6 +26,8 @@ Optional arguments:
   The original CSV file will be moved to trash after successful processing.
 - `-t, --template`: Generate a CSV template file with the given name in `~/Videos/Clips/Timestamps/`.
 - `-ltf, --list_timestamp_files`: List all timestamp files' names in the `Timestamps` directory.
+- `-otf, --open_timestamp_file`: Open a specific timestamp file in the `Timestamps` directory.
+  You can use the filename without the `.csv` extension.
 - `-h, --help`: Show help message and exit.
 
 # Grouping clips

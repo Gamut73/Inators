@@ -214,6 +214,14 @@ def _list_files_in_timestamps_folder():
         print(f"The timestamps folder does not exist at {folder_path}.")
 
 
+def open_template_file(filename):
+    template_filepath = os.path.join(os.path.expanduser("~"), TIMESTAMPS_FOLDER, filename + '.csv')
+    if os.path.exists(template_filepath):
+        _open_csv_editor(template_filepath)
+    else:
+        print(f"File {args.open_timestamp_file}.csv does not exist in the timestamps folder.")
+
+
 if __name__ == "__main__":
     default_output_dir = os.path.join(os.path.expanduser("~"), "Videos", "Clips")
 
@@ -244,6 +252,8 @@ if __name__ == "__main__":
                         help="Value is the filename of a csv that will be generated with the template for the clips")
     parser.add_argument('-ltf', '--list_timestamp_files', help="List all the template files in the timestamps folder",
                         action='store_true')
+    parser.add_argument('-otf', '--open_timestamp_file', help="Opens the csv file in the default editor",
+                        type=str)
 
     args = parser.parse_args()
 
@@ -272,6 +282,8 @@ if __name__ == "__main__":
         generate_clips_csv_file_template(args.template)
     elif args.list_timestamp_files:
         _list_files_in_timestamps_folder()
+    elif args.open_timestamp_file:
+        open_template_file(args.open_timestamp_file)
     else:
         clip_video(args.input_file_path, args.clip_name, args.start_time, args.end_time, args.output_dir,
                    subtitles_file_path, args.embedded_audio)
