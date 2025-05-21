@@ -1,0 +1,36 @@
+#!/bin/zsh
+
+backgroundImagesFolderPath="/Users/walter@glucode.com/Documents/teams_backgrounds"
+teamsCustomBackgroundsFolderPath="$HOME/Library/Containers/com.microsoft.teams2/Data/Library/Application Support/Microsoft/MSTeams/Backgrounds/Uploads"
+
+rm -r "$teamsCustomBackgroundsFolderPath"
+[[ ! -d "$teamsCustomBackgroundsFolderPath" ]] && mkdir -p "$teamsCustomBackgroundsFolderPath"
+
+addBackgroundsAndThumbnails() {
+  for image in "$@"; do
+    [[ ! -e $image ]] && continue
+
+    guid=$(uuidgen)
+    echo "Creating Background for $image"
+    sips -z 1080 1920 "$image" --out "$teamsCustomBackgroundsFolderPath/$guid.png"
+
+    echo "Creating Background Thumbnail for $image"
+    thumbName="${guid}_thumb.png"
+    sips -z 158 220 "$image" --out "$teamsCustomBackgroundsFolderPath/$thumbName"
+  done
+}
+
+jpg_files=("$backgroundImagesFolderPath"/*.jpg(N))
+if (( ${#jpg_files} > 0 )); then
+  addBackgroundsAndThumbnails $jpg_files
+fi
+
+jpeg_files=("$backgroundImagesFolderPath"/*.jpeg(N))
+if (( ${#jpeg_files} > 0 )); then
+  addBackgroundsAndThumbnails $jpeg_files
+fi
+
+png_files=("$backgroundImagesFolderPath"/*.png(N))
+if (( ${#png_files} > 0 )); then
+  addBackgroundsAndThumbnails $png_files
+fi
