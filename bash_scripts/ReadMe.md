@@ -5,3 +5,8 @@
 
 # keep_master.sh
 Deletes all local branches in a git repository except the one you provide (e.g **main** or **master**)
+
+# add_custom_teams_backgrounds
+Automatically resizes images from a given folder, creates thumbnails for them, and saves them in the teams custom backgrounds folder.
+
+**Note: It will delete and replace the existing custom images**
