@@ -14,3 +14,4 @@ create_scripts_aliases
 
 alias eiga="cd ~/Videos/Eiga"
 alias series="cd ~/Videos/Series"
+alias anime="cd ~/Videos/Anime"
