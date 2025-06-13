@@ -12,6 +12,7 @@ from util.file_namer import get_cleaned_names_for_movie_files
 from util.JsonDatabase import JsonDatabase
 from IMDBCacheConstants import *
 from util.print_colors import PrintColors
+from util.youtube_api_client import *
 
 db = JsonDatabase(IMDB_DB_FILE_PATH)
 
@@ -129,8 +130,16 @@ def _map_imdb_response_to_db_format(imdb_response, source_dir, filename):
         KEYWORDS_KEY: imdb_response["keywords"] if imdb_response["keywords"] is not None else "",
         POSTER_URL_KEY: imdb_response["poster"],
         SOURCE_DIR_KEY: source_dir,
-        FILENAME_KEY: filename
+        FILENAME_KEY: filename,
+        YOUTUBE_URL_KEY: "" #_build_youtube_link(imdb_response["name"]) TODO: Uncomment when rate limits are handled
     }
+
+
+def _build_youtube_link(movie_name):
+    result_id = get_first_youtube_search_video_result_id(movie_name + " trailer")
+    if result_id is not None:
+        return f"https://www.youtube.com/watch?v={result_id}"
+    return "<Could not find a trailer on YouTube>"
 
 
 def _map_list_to_string(list):
@@ -157,9 +166,15 @@ def print_movie_info(movie_details):
     description = PrintColors.apply_bold(movie_details[DESCRIPTION_KEY])
     desc_print = f'\n\t- {description}' if description != "" else f"\n\t- <No description found>"
     rating = f'{movie_details[RATING_KEY]}'
-    director = f" , {PrintColors.apply_underline('dir:')} {movie_details[DIRECTOR_KEY]}," if movie_details[DIRECTOR_KEY] is not None else ""
-    genre = f'\n\t- {PrintColors.apply_underline("genre:")} {movie_details[GENRE_KEY]}' if movie_details[GENRE_KEY] is not None else ""
-    keywords = f'\n\t- {PrintColors.apply_underline("keywords:")} {movie_details[KEYWORDS_KEY]}' if movie_details[KEYWORDS_KEY] is not None else ""
+    director = f" , {PrintColors.apply_underline('dir:')} {movie_details[DIRECTOR_KEY]}," if movie_details[
+                                                                                                 DIRECTOR_KEY] is not None else ""
+    genre = f'\n\t- {PrintColors.apply_underline("genre:")} {movie_details[GENRE_KEY]}' if movie_details[
+                                                                                               GENRE_KEY] is not None else ""
+    keywords = f'\n\t- {PrintColors.apply_underline("keywords:")} {movie_details[KEYWORDS_KEY]}' if movie_details[
+                                                                                                        KEYWORDS_KEY] is not None else ""
     filepath = f'\n\t- {PrintColors.apply_underline("filepath:")} {os.path.join(movie_details[SOURCE_DIR_KEY], movie_details[FILENAME_KEY])}'
 
-    print(f'\n* {title} {year} {director} [{rating}/10] {desc_print} {genre} {keywords} {filepath}')
+    youtube_link = f'\n\t- {PrintColors.apply_underline("youtube trailer:")} {movie_details[YOUTUBE_URL_KEY]}' if \
+    movie_details[YOUTUBE_URL_KEY] is not None else ""
+
+    print(f'\n* {title} {year} {director} [{rating}/10] {desc_print} {genre} {keywords} {youtube_link} {filepath}')

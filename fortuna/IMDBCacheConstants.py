@@ -10,6 +10,7 @@ SOURCE_DIR_KEY = 'source_dir'
 FILENAME_KEY = 'filename'
 POSTER_URL_KEY = 'poster_url'
 ID_KEY = 'id'
+YOUTUBE_URL_KEY = 'youtube_url'
 
 IMDB_CACHE_KEY_LIST = [
     ID_KEY,
@@ -22,5 +23,6 @@ IMDB_CACHE_KEY_LIST = [
     KEYWORDS_KEY,
     SOURCE_DIR_KEY,
     FILENAME_KEY,
-    POSTER_URL_KEY
+    POSTER_URL_KEY,
+    YOUTUBE_URL_KEY
 ]

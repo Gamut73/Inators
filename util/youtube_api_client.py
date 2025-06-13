@@ -1,8 +1,9 @@
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 import googleapiclient.discovery
 
-load_dotenv('local.env')
+load_dotenv(Path(__file__).parent / 'local.env')
 
 api_service_name = "youtube"
 api_version = "v3"
@@ -14,6 +15,7 @@ youtube = googleapiclient.discovery.build(
 
 
 def get_first_youtube_search_video_result_id(query, max_results=1):
+    # TODO: FIND A WAY TO HANDLE RATE LIMITS
     request = youtube.search().list(
         part="snippet",
         maxResults=max_results,
