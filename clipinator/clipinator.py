@@ -9,6 +9,8 @@ from moviepy.editor import *
 from moviepy.video.tools.subtitles import SubtitlesClip
 from send2trash import send2trash
 
+from constants import *
+
 TIMESTAMPS_FOLDER = 'Videos/Clips/Timestamps'
 CSV_FILE_EDITOR = 'libreoffice'
 
@@ -41,10 +43,10 @@ def clip_multiple_clips_from_a_video(input_file_path, clips, clips_parent_folder
     clips_parent_folder = os.path.join(output_dir, clean_clips_parent_folder_name)
     for clip in clips:
         subs_filepath = subtitles_file_path
-        if 'ignore_subs' in clip and clip['ignore_subs'].lower() == 'y':
+        if 'ignore_subs' in clip and clip[IGNORE_SUBS_FIELD].lower() == 'y':
             subs_filepath = ''
-        clip_video(input_file_path, clip['title'], clip['start'], clip['end'], clips_parent_folder, subs_filepath,
-                   audio_track_index)
+        clip_video(input_file_path, clip[TITLE_FIELD], clip[START_TIME_FIELD], clip[END_TIME_FIELD],
+                   clips_parent_folder, subs_filepath, audio_track_index)
 
 
 def get_clips_from_csv_file(filepath):
@@ -53,14 +55,14 @@ def get_clips_from_csv_file(filepath):
         clips = []
         for row in csv_reader:
             clip = {
-                'start': row['start'],
-                'end': row['end'],
-                'title': row['title'],
+                START_TIME_FIELD: row[START_TIME_FIELD],
+                END_TIME_FIELD: row[END_TIME_FIELD],
+                TITLE_FIELD: row[TITLE_FIELD],
             }
-            if 'ignore_subs' in row:
-                clip['ignore_subs'] = row['ignore_subs']
+            if IGNORE_SUBS_FIELD in row:
+                clip[IGNORE_SUBS_FIELD] = row[IGNORE_SUBS_FIELD].strip()
             else:
-                clip['ignore_subs'] = 'n'
+                clip[IGNORE_SUBS_FIELD] = 'n'
             clips.append(clip)
     return clips
 
@@ -80,7 +82,7 @@ def _find_timestamps_file_in_timestamps_folder(filename):
 def generate_clips_csv_file_template(filename):
     folder_path = _create_folders_in_home(TIMESTAMPS_FOLDER)
     file_path = os.path.join(folder_path, filename + '.csv')
-    header = ['start', 'end', 'title']
+    header = [START_TIME_FIELD, END_TIME_FIELD, IGNORE_SUBS_FIELD, TITLE_FIELD]
     with open(file_path, 'w', newline='') as csvfile:
         csvwriter = csv.writer(csvfile)
         csvwriter.writerow(header)
