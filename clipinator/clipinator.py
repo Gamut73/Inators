@@ -40,7 +40,10 @@ def clip_multiple_clips_from_a_video(input_file_path, clips, clips_parent_folder
     clean_clips_parent_folder_name = clips_parent_folder_name.split('(')[0].strip()
     clips_parent_folder = os.path.join(output_dir, clean_clips_parent_folder_name)
     for clip in clips:
-        clip_video(input_file_path, clip['title'], clip['start'], clip['end'], clips_parent_folder, subtitles_file_path,
+        subs_filepath = subtitles_file_path
+        if 'ignore_subs' in clip and clip['ignore_subs'].lower() == 'y':
+            subs_filepath = ''
+        clip_video(input_file_path, clip['title'], clip['start'], clip['end'], clips_parent_folder, subs_filepath,
                    audio_track_index)
 
 
@@ -49,11 +52,16 @@ def get_clips_from_csv_file(filepath):
         csv_reader = csv.DictReader(file)
         clips = []
         for row in csv_reader:
-            clips.append({
+            clip = {
                 'start': row['start'],
                 'end': row['end'],
                 'title': row['title'],
-            })
+            }
+            if 'ignore_subs' in row:
+                clip['ignore_subs'] = row['ignore_subs']
+            else:
+                clip['ignore_subs'] = 'n'
+            clips.append(clip)
     return clips
 
 
