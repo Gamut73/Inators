@@ -30,7 +30,7 @@ def clip_video(input_file_path, clip_name, start_time, end_time, output_dir, sub
     if subtitles_filepath != '':
         clip = _add_subtitles(clip, subtitles_filepath, clip.size[1])
 
-    if audio_track_index is not None and audio_track_index != 0:
+    if audio_track_index is not None:
         clip = _set_alternative_audio_track(clip, input_file_path, audio_track_index)
 
     clip = clip.subclip(_convert_time_to_seconds(start_time), _convert_time_to_seconds(end_time))
@@ -95,6 +95,7 @@ def _set_alternative_audio_track(clip, video_filepath, audio_track_index):
         os.system(f"ffmpeg -i {shlex.quote(video_filepath)} -map 0:a:{audio_track_index} -ab 160k -ac 2 -ar 44100 -vn -loglevel error {shlex.quote(TMP_AUDIO_PATH)}")
 
     audio_clip = AudioFileClip(TMP_AUDIO_PATH)
+    print("Using alternative audio track with index ", audio_track_index)
     return clip.set_audio(audio_clip)
 
 
