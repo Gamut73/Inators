@@ -113,7 +113,7 @@ def _add_subtitles(video_clip, subtitles_file, video_height):
     txt_clip_generator = lambda txt: TextClip(
         _parse_html_to_text(txt),
         font='Dejavu-Sans-Bold',
-        fontsize=int(video_height * 0.08),
+        fontsize=int(video_height * 0.06),
         color='white',
         method='caption',
         stroke_color='black',
