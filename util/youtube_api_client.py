@@ -16,7 +16,7 @@ youtube = googleapiclient.discovery.build(
 
 def get_first_youtube_search_video_result_id(query, max_results=1):
     # TODO: FIND A WAY TO HANDLE RATE LIMITS
-    request = youtube.search().list(
+    request = youtube.search().lists(
         part="snippet",
         maxResults=max_results,
         q=query,

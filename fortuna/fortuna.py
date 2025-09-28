@@ -1,22 +1,20 @@
-import argparse
 import os
 import random
 import subprocess
-from enum import Enum
+import sys
 
+
+import click
 from art import tprint
 
-from IMDBService import get_info, get_movie_files_by_filters, get_movie_info_by_filters, print_movie_info
 from IMDBCacheConstants import IMDB_CACHE_KEY_LIST
+from IMDBService import get_movie_files_by_filters, get_movie_info_by_filters, print_movie_info
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from util.logger import debug, info
+from enums import ActionType, ListType
 
 MEDIA_PLAYER = 'vlc'
-
-
-class ActionType(Enum):
-    PLAY = "PLAY"
-    SHOW_INFO = "SHOW_INFO"
-    LIST = "LIST"
-    LIST_FIELDS = "LIST_FIELDS"
 
 
 def get_field_value_counts(field_name):
@@ -68,9 +66,9 @@ def play_movie(dir, number_of_videos, movie_filters):
             if os.path.basename(movie) in base_names_cached_movies:
                 intersection.append(movie)
         movies = intersection
-        print(f"Choosing from {len(movies)} movies that match the filters")
+        info(f"Choosing from {len(movies)} movies that match the filters")
     if not movies:
-        print('<<No Videos Found Within This Directory>>')
+        info('<<No Videos Found Within This Directory>>')
     else:
         movies_to_play = pick_random_video(movies, number_of_videos)
         open_video_with_medial_player(movies_to_play)
@@ -80,13 +78,13 @@ def play_series(directory, number_of_videos):
     random_episodes = []
     seasons = get_all_folders(directory)
     if not seasons:
-        print(f'<<No Seasons Found Within {directory}>>')
+        info(f'<<No Seasons Found Within {directory}>>')
     else:
         for _ in range(number_of_videos):
             random_season = random.choice(seasons)
             episodes = get_video_files(os.path.join(directory, random_season))
             if not episodes:
-                print(f'<<No Episodes Found Within Season {random_season}>>')
+                info(f'<<No Episodes Found Within Season {random_season}>>')
             else:
                 random_episode = pick_random_video(episodes, 1)
                 random_episodes.append(os.path.join(directory, random_season, random_episode[0]))
@@ -101,60 +99,95 @@ def play(source, number_of_videos, video_type, filters):
         play_series(source, number_of_videos)
 
 
-def main(file_path, video_type, action, number_of_videos, filters, field_name=None):
-    if action == ActionType.PLAY:
-        play(file_path, number_of_videos, video_type, filters)
-    elif action == ActionType.SHOW_INFO:
-        get_info(file_path)
-    elif action == ActionType.LIST:
-        movies = get_movie_info_by_filters(filters)
-        for movie in movies:
-            print_movie_info(movie)
-    elif action == ActionType.LIST_FIELDS:
-        if field_name:
-            if field_name not in IMDB_CACHE_KEY_LIST:
-                print(f"Field '{field_name}' is not valid. Available fields are:")
-                for field in IMDB_CACHE_KEY_LIST:
-                    print(field)
+def list_field_values(field_name):
+    if field_name:
+        if field_name not in IMDB_CACHE_KEY_LIST:
+            error(f"Field '{field_name}' is not valid. Available fields are:")
+            for field in IMDB_CACHE_KEY_LIST:
+                print(field)
+        else:
+            value_counts = get_field_value_counts(field_name)
+            if not value_counts:
+                info(f"No values found for field '{field_name}'")
             else:
-                value_counts = get_field_value_counts(field_name)
-                if not value_counts:
-                    print(f"No values found for field '{field_name}'")
-                else:
-                    print(f"Values for '{field_name}':")
-                    for value, count in sorted(value_counts.items()):
-                        print(f"- {value}: {count}")
+                print(f"Values for '{field_name}':")
+                for value, count in sorted(value_counts.items()):
+                    print(f"- {value}: {count}")
+
+
+def validate_filepath(ctx, param, value):
+    action = ctx.params.get('action', '').upper()
+    actions_requiring_filepath = [ActionType.PLAY.name, ActionType.INFO.name]
+    if action in actions_requiring_filepath and not value:
+        raise click.BadParameter('filepath is required when action is PLAY')
+    return value
+
+
+def validate_list_type(ctx, param, value):
+    action = ctx.params.get('action', '').upper()
+    folder = ctx.params.get('folder_path', '').upper()
+    list_type = ctx.params.get('list_type', '').upper()
+    debug(f"Validating list_type: action={action}, value={value}, folder={folder}, list_type={list_type}")
+    if action == ActionType.LIST.name and not [value for value in ListType.__members__].count(value):
+        raise click.BadParameter('list_type is required when action is LIST')
+    return value
+
+
+def validate_field_name(ctx, param, value):
+    list_type = ctx.params.get('list_type', '').upper()
+    if list_type == ListType.FIELD_VALUES and not [field.name for field in IMDB_CACHE_KEY_LIST].count(value):
+        raise click.BadParameter(f"field_name must be one of {[field for field in IMDB_CACHE_KEY_LIST]}")
+    return value
+
+
+@click.group()
+def fortuna_cli():
+    """Fortuna - Random Movie/Series Picker and IMDB Info Tool"""
+    pass
+
+
+@fortuna_cli.command()
+@click.argument('folder_path', type=click.Path(exists=True))
+@click.option('--number', '-n', default=1, help='Number of random videos to open (default: 1)')
+@click.option('--series', '-s', is_flag=True, help='Expects series organized in seasons folders')
+@click.option('--filters', '-f', type=str, default=None, help='Filter for cached movies')
+def play(folder_path, number, series, filters):
+    """Play random video(s) from a directory."""
+    media_type = "SERIES" if series else "MOVIE"
+    play(folder_path, number_of_videos=number, video_type=media_type, filters=filters)
+
+
+@fortuna_cli.group('list')
+def lists():
+    """List various information."""
+    pass
+
+
+@lists.command()
+@click.argument('folder_path', type=click.Path(exists=True), required=False)
+@click.option('--filters', '-f', type=str, default=None, help='Filter for cached movies')
+def media(folder_path, filters):
+    """List all cached movies."""
+    movies = get_movie_info_by_filters(filters)
+    for movie in movies:
+        print_movie_info(movie)
+
+
+@lists.command()
+def fields():
+    """List all available fields you can filter by."""
+    print("Available fields:")
+    for field in IMDB_CACHE_KEY_LIST:
+        print(f"- {field}")
+
+
+@lists.command()
+@click.argument('field_name', type=click.Choice([field for field in IMDB_CACHE_KEY_LIST], case_sensitive=False))
+def field_values(field_name):
+    """Get value counts for a specific field."""
+    list_field_values(field_name)
 
 
 if __name__ == "__main__":
-    medium = "MOVIE"
-    action = ActionType.PLAY
-    field_name = None
-
-    parser = argparse.ArgumentParser(description="Open a random video file from within a directory")
-    parser.add_argument("dir", help="The source directory")
-    parser.add_argument("-s", "--series", action="store_true", help="Expects series organized in seasons folders")
-    parser.add_argument("-n", "--number", type=int, default=1, help="Number of random videos to open")
-    parser.add_argument("-i", "--info", action="store_true", help="Get movie info")
-    parser.add_argument("-f", "--filters", type=str, default=None, help="Filter for cached movies")
-    parser.add_argument("-l", "--list", action="store_true", help="List all cached movies")
-    parser.add_argument("-lf", "--list_fields", nargs='?', const=True,
-                        help="List all fields you can filter by or get value counts for a specific field")
-
-    args = parser.parse_args()
-    if args.series:
-        medium = "SERIES"
-
-    if args.info:
-        action = ActionType.SHOW_INFO
-    elif args.list:
-        action = ActionType.LIST
-    elif args.list_fields:
-        action = ActionType.LIST_FIELDS
-        if args.list_fields is not True:  # If a field name was provided
-            field_name = args.list_fields.lower()
-
-    filters = args.filters if (args.filters is not None) else None
-
-    main(args.dir, medium, action, args.number, filters, field_name)
+    fortuna_cli()
 
