@@ -8,30 +8,77 @@ Script: Fortuna helps you make entertainment decisions by randomly selecting a m
 also handle series organized in seasons folders. In the future, it will also choose what you watch for you based on your
 preferences that you wouldn't otherwise be able to express without the use of natural language.
 
-# Usage
+## Requirements
+- Python 3.x
+- VLC available on PATH (default media player). You can change the player by editing `MEDIA_PLAYER` in `fortuna.py`. (AT some point a config file will be added)
+- Supported video files: `.mp4`, `.mkv`, `.avi`
 
-`python3 fortuna.py <directory>`
+## Quick Start
+- Play random movies from a folder:
+  - `python3 fortuna.py play <folder>`
+- Play random episodes from a series (season folders inside the series folder):
+  - `python3 fortuna.py play <folder> -s`
+- List cached media and filter by IMDB fields:
+  - `python3 fortuna.py list media -f "genre:comedy,keywords:japanese"`
 
-If you expect series organized in seasons folders, use the `-s` or `--series` flag:
+## Commands
 
-`python3 fortuna.py <directory> -s`
+### Play
+Play random video(s) from a directory.
 
-# Arguments
+- Syntax:
+  - `python3 fortuna.py play <folder> [--number N] [--series] [--filters "field:value,field:value"]`
+- Options:
+  - `-n, --number`: Number of random videos to open (default: 1)
+  - `-s, --series`: Treat the folder as a series directory containing season subfolders
+  - `-f, --filters`: Filter cached movies using `field:value` pairs separated by commas
+    - Example: `-f "genre:comedy,keywords:japanese"`
+    - Matching is case-insensitive
+- Examples:
+  - One random movie: `python3 fortuna.py play ~/Videos/Movies`
+  - Three random episodes from a show: `python3 fortuna.py play ~/Videos/Shows -s -n 3`
+  - One random filtered movie: `python3 fortuna.py play ~/Videos/Movies -f "genre:comedy,year:1999"`
 
-- `<directory>`: The source directory where the media files are located.
-- `-s` or `--series`: Use this flag if you expect series organized in seasons folders when playing.
-- `-n` or `--number`: The number of videos to play. Default is 1.
-- `-i` or `--info`: Get movie info. The value is a movie file or a directory containing movie files.
-- `-f` or `--filters`: Filter for cached movies. The forma is `field:value,field:value`. You can use multiple filters by
-  separating them with a comma. For example: `genre:comedy,keywords:japanese`. Use the `-lf` or `--list_fields` flag to
-  see all fields you can filter by.
-- `-l` or `--list`: List all cached movies that have information. Can be filtered using the `-f` or `--filters` flag.
-- `-lf` or `--list_fields`: Without arguments, lists all fields you can filter by. When provided with a field name (e.g., `-lf genre`), displays counts of all unique values for that field in the IMDB cache. For example, running `python fortuna.py -lf genre` will show all unique genre values and how many movies match each genre, like:
-  ```
-  Values for 'genre':
-  - action: 22
-  - comedy: 12
-  - fantasy: 10
-  - scifi: 1
-  ```
-  The matching is case insensitive, so "Comedy" and "comedy" are counted as the same value.
+### List
+List cached IMDB info and available fields.
+
+- List media (optionally filtered):
+  - `python3 fortuna.py list media [-f "field:value,field:value"]`
+  - Prints cached movies that match the given filters.
+- List all available fields you can filter by:
+  - `python3 fortuna.py list fields`
+- List value counts for a field (e.g., genres):
+  - `python3 fortuna.py list field-values <field_name>`
+  - Example:
+    ```
+    python3 fortuna.py list field-values genre
+    Values for 'genre':
+    - action: 22
+    - comedy: 12
+    - fantasy: 10
+    - scifi: 1
+    ```
+  - Matching is case-insensitive.
+
+## Filters
+- Format: `field:value,field:value`
+- Multiple filters are comma-separated.
+- Use `python3 fortuna.py list fields` to see valid fields.
+- Use `python3 fortuna.py list field-values <field_name>` to explore distinct values and counts.
+
+## Series Folder Layout
+If using `--series`, the directory should contain season subfolders:
+```
+/path/to/Show/
+  Season 01/
+    S01E01.mkv
+    S01E02.mkv
+  Season 02/
+    S02E01.mkv
+    ...
+```
+
+## Help
+- CLI help: `python3 fortuna.py --help`
+- Play help: `python3 fortuna.py play --help`
+- List help: `python3 fortuna.py list --help`
