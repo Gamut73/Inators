@@ -11,7 +11,7 @@ from IMDBCacheConstants import IMDB_CACHE_KEY_LIST
 from IMDBService import get_movie_files_by_filters, get_movie_info_by_filters, print_movie_info
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from util.logger import debug, info
+from util.logger import debug, info, error
 from enums import ActionType, ListType
 
 MEDIA_PLAYER = 'vlc'
@@ -56,7 +56,7 @@ def open_video_with_medial_player(video_files):
         subprocess.call([MEDIA_PLAYER] + video_files, stdout=devnull, stderr=devnull)
 
 
-def play_movie(dir, number_of_videos, movie_filters):
+def _play_movie(dir, number_of_videos, movie_filters):
     movies = get_video_files(dir)
     if movie_filters is not None:
         movies_files_in_db_by_filters = get_movie_files_by_filters(movie_filters)
@@ -74,7 +74,7 @@ def play_movie(dir, number_of_videos, movie_filters):
         open_video_with_medial_player(movies_to_play)
 
 
-def play_series(directory, number_of_videos):
+def _play_series(directory, number_of_videos):
     random_episodes = []
     seasons = get_all_folders(directory)
     if not seasons:
@@ -92,11 +92,11 @@ def play_series(directory, number_of_videos):
         open_video_with_medial_player(random_episodes)
 
 
-def play(source, number_of_videos, video_type, filters):
+def _play(source, number_of_videos, video_type, filters):
     if video_type == "MOVIE":
-        play_movie(source, number_of_videos, filters)
+        _play_movie(source, number_of_videos, filters)
     elif video_type == "SERIES":
-        play_series(source, number_of_videos)
+        _play_series(source, number_of_videos)
 
 
 def list_field_values(field_name):
@@ -142,7 +142,7 @@ def validate_field_name(ctx, param, value):
 
 @click.group()
 def fortuna_cli():
-    """Fortuna - Random Movie/Series Picker and IMDB Info Tool"""
+    """Fortuna - Random Movie/Series Picker and IMDB Movie Infol"""
     pass
 
 
@@ -154,7 +154,7 @@ def fortuna_cli():
 def play(folder_path, number, series, filters):
     """Play random video(s) from a directory."""
     media_type = "SERIES" if series else "MOVIE"
-    play(folder_path, number_of_videos=number, video_type=media_type, filters=filters)
+    _play(folder_path, number_of_videos=number, video_type=media_type, filters=filters)
 
 
 @fortuna_cli.group('list')
