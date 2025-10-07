@@ -11,6 +11,9 @@ from send2trash import send2trash
 
 from constants import *
 
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from util.logger import debug, info, error
+
 TIMESTAMPS_FOLDER = 'Videos/Clips/Timestamps'
 CSV_FILE_EDITOR = 'libreoffice'
 
@@ -19,7 +22,7 @@ TMP_SUBTITLES_PATH = os.path.join(os.getcwd(), "tmp_subtitle.srt")
 
 
 def clip_video(input_file_path, clip_name, start_time, end_time, output_dir, subtitles_filepath, audio_track_index):
-    print(f"Clipping from {start_time} to {end_time} and saving it as {clip_name}")
+    info(f"Clipping from {start_time} to {end_time} and saving it as {clip_name}")
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
@@ -44,6 +47,7 @@ def clip_multiple_clips_from_a_video(input_file_path, clips, clips_parent_folder
     for clip in clips:
         subs_filepath = subtitles_file_path
         if 'ignore_subs' in clip and clip[IGNORE_SUBS_FIELD].lower() == 'y':
+            info(f"Ignoring subtitles for clip {clip[TITLE_FIELD]}")
             subs_filepath = ''
         clip_video(input_file_path, clip[TITLE_FIELD], clip[START_TIME_FIELD], clip[END_TIME_FIELD],
                    clips_parent_folder, subs_filepath, audio_track_index)
@@ -74,9 +78,9 @@ def _find_timestamps_file_in_timestamps_folder(filename):
         if os.path.exists(file_path):
             return file_path
         else:
-            print(f"File {filename}.csv does not exist in the timestamps folder.")
+            error(f"File {filename}.csv does not exist in the timestamps folder.")
     else:
-        print(f"The timestamps folder does not exist at {timestamps_folder}.")
+        error(f"The timestamps folder does not exist at {timestamps_folder}.")
 
 
 def generate_clips_csv_file_template(filename):
@@ -95,7 +99,7 @@ def _set_alternative_audio_track(clip, video_filepath, audio_track_index):
         os.system(f"ffmpeg -i {shlex.quote(video_filepath)} -map 0:a:{audio_track_index} -ab 160k -ac 2 -ar 44100 -vn -loglevel error {shlex.quote(TMP_AUDIO_PATH)}")
 
     audio_clip = AudioFileClip(TMP_AUDIO_PATH)
-    print("Using alternative audio track with index ", audio_track_index)
+    info("Using alternative audio track with index ", audio_track_index)
     return clip.set_audio(audio_clip)
 
 
@@ -222,7 +226,7 @@ def _list_files_in_timestamps_folder():
         else:
             print("No files found in the timestamps folder.")
     else:
-        print(f"The timestamps folder does not exist at {folder_path}.")
+        error(f"The timestamps folder does not exist at {folder_path}.")
 
 
 def open_template_file(filename):
@@ -230,7 +234,7 @@ def open_template_file(filename):
     if os.path.exists(template_filepath):
         _open_csv_editor(template_filepath)
     else:
-        print(f"File {args.open_timestamp_file}.csv does not exist in the timestamps folder.")
+        error(f"File {args.open_timestamp_file}.csv does not exist in the timestamps folder.")
 
 
 if __name__ == "__main__":
