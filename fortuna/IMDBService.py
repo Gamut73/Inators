@@ -13,6 +13,7 @@ from util.JsonDatabase import JsonDatabase
 from IMDBCacheConstants import *
 from util.print_colors import PrintColors
 from util.youtube_api_client import *
+from util.logger import warning, info, error
 
 db = JsonDatabase(IMDB_DB_FILE_PATH)
 
@@ -27,10 +28,10 @@ def get_movie_info_by_filters(filters):
 
     movies = []
     filter_dict = _get_filter_map(filters)
-    print(f"Searching for movies with filters: {filter_dict}")
+    info(f"Searching for movies with filters: {filter_dict}")
     cached_movies = db.get_all()
     if filter_dict is None:
-        print("Invalid filters, return all cached movies")
+        error("Invalid filters, return all cached movies")
         return cached_movies
 
     for movie in cached_movies:
@@ -50,7 +51,7 @@ def _get_filter_map(filters):
         key, value = filter.split(':')
 
         if key not in IMDB_CACHE_KEY_LIST:
-            print(f"Invalid filter key: {key}")
+            error(f"Invalid filter key: {key}")
             continue
 
         keys.append(key.lower())
@@ -84,7 +85,7 @@ def _delete_movies_from_db_not_in_dir(movie_files):
     for movie in all_movies:
         if movie[FILENAME_KEY] not in movie_files:
             db.delete_by_id(movie[ID_KEY])
-            print(f"Deleted {PrintColors.apply_warning(movie[FILENAME_KEY])} from the movies database.")
+            info(f"Deleted {movie[FILENAME_KEY]} from the movies database.")
 
 
 def _get_movie_info(filename, imdb_client=None):
@@ -98,17 +99,23 @@ def _get_movie_info(filename, imdb_client=None):
         movie_year = clean_move_name[0]['new'].split(' (')[1].split(')')[0] if ' (' in clean_move_name[0]['new'] else \
             None
 
+        try:
+            movie_year = int(movie_year) if movie_year is not None else None
+        except ValueError:
+            warning(f"Could not parse year '{movie_year}' for movie '{clean_movie_name_without_info}'. Ignoring year ")
+            movie_year = None
+
         imdb_response = imdb.get_by_name(
             clean_movie_name_without_info,
-            year=int(movie_year) if movie_year is not None else None
+            year=movie_year
         )
 
         res = json.loads(imdb_response)
 
         if 'status' in res:
-            print(
-                f"{PrintColors.WARNING}Failed to get info for {filename}. Consider renaming the file to make it "
-                f"easier for the IMDB api {PrintColors.ENDC}")
+            warning(
+                f"Failed to get info for {filename}. Consider renaming the file to make it "
+                "easier for the IMDB api")
             return
 
         file_dir = os.path.join(os.getcwd(), os.path.dirname(filename))
