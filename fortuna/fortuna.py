@@ -176,8 +176,7 @@ def lists():
 def media(folder_path, filters):
     """List all cached movies."""
     movies = get_movie_info_by_filters(filters)
-    for movie in movies:
-        print_movie_info(movie)
+    print_movie_info(movies)
 
 
 @lists.command()

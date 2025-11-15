@@ -5,7 +5,6 @@ from pathlib import Path
 import google.generativeai as genai
 from dotenv import load_dotenv
 
-
 #TODO: Destroy the monster that this file has become
 
 
@@ -14,6 +13,7 @@ from util.file_namer_llm_prompts import (build_clean_series_folder_name_prompt,
                                          build_clean_subdir_names_prompt,
                                          build_clean_episode_names_prompt,
                                          build_clean_movie_names_in_dir_prompt)
+
 
 def clean_series_dir(directory):
     if not os.path.isdir(directory):
@@ -77,7 +77,7 @@ def _get_gemini_response(prompt):
     _load_dotenv()
     gemini_api_key = os.getenv('GEMINI_API_KEY')
     genai.configure(api_key=gemini_api_key)
-    text_model = genai.GenerativeModel('gemini-2.0-flash')
+    text_model = genai.GenerativeModel('gemini-2.5-flash')
     response = text_model.generate_content(prompt)
     return (response.text
             .replace("```", "")

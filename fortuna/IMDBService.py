@@ -11,9 +11,9 @@ from util.file_mover import get_all_video_files, is_video_file
 from util.file_namer import get_cleaned_names_for_movie_files
 from util.JsonDatabase import JsonDatabase
 from IMDBCacheConstants import *
-from util.print_colors import PrintColors
 from util.youtube_api_client import *
 from util.logger import warning, info, error
+from util.printer import print_table, TableData, TableColumn
 
 db = JsonDatabase(IMDB_DB_FILE_PATH)
 
@@ -122,8 +122,7 @@ def _get_movie_info(filename, imdb_client=None):
         imdb_cache = [_map_imdb_response_to_db_format(res, file_dir, filename)]
         db.add(imdb_cache[0])
 
-    for movie in imdb_cache:
-        print_movie_info(movie)
+    print_movie_info(imdb_cache)
 
 
 def _map_imdb_response_to_db_format(imdb_response, source_dir, filename):
@@ -166,22 +165,45 @@ def _search_imdb_cache_for_movie(db, filename):
     return key
 
 
-def print_movie_info(movie_details):
-    title = PrintColors.apply_header(movie_details[TITLE_KEY])
-    title = PrintColors.apply_bold(title)
-    year = f"({movie_details[YEAR_KEY]})"
-    description = PrintColors.apply_bold(movie_details[DESCRIPTION_KEY])
-    desc_print = f'\n\t- {description}' if description != "" else f"\n\t- <No description found>"
-    rating = f'{movie_details[RATING_KEY]}'
-    director = f" , {PrintColors.apply_underline('dir:')} {movie_details[DIRECTOR_KEY]}," if movie_details[
-                                                                                                 DIRECTOR_KEY] is not None else ""
-    genre = f'\n\t- {PrintColors.apply_underline("genre:")} {movie_details[GENRE_KEY]}' if movie_details[
-                                                                                               GENRE_KEY] is not None else ""
-    keywords = f'\n\t- {PrintColors.apply_underline("keywords:")} {movie_details[KEYWORDS_KEY]}' if movie_details[
-                                                                                                        KEYWORDS_KEY] is not None else ""
-    filepath = f'\n\t- {PrintColors.apply_underline("filepath:")} {os.path.join(movie_details[SOURCE_DIR_KEY], movie_details[FILENAME_KEY])}'
+def print_movie_info(movie_details_list):
+    table_data = TableData(
+        columns=[
+            TableColumn(name="Title", style="cyan", width=30),
+            TableColumn(name="Year", style="green", width=10),
+            TableColumn(name="Director", style="magenta", width=30),
+            TableColumn(name="Rating", style="yellow", width=10),
+            TableColumn(name="Description", style="white", width=50),
+            TableColumn(name="Genre", style="blue", width=30),
+            TableColumn(name="Keywords", style="red", width=30),
+            TableColumn(name="YouTube Trailer", style="bright_blue", width=50),
+            TableColumn(name="Filepath", style="bright_green", width=70)
+        ],
+        rows=[],
+        title="Movie Information"
+    )
+    for movie_details in movie_details_list:
+        title = movie_details[TITLE_KEY]
+        year = movie_details[YEAR_KEY]
+        description = movie_details[DESCRIPTION_KEY] if movie_details[DESCRIPTION_KEY] != "" else "<No description found>"
+        rating = movie_details[RATING_KEY]
+        director = movie_details[DIRECTOR_KEY] if movie_details[DIRECTOR_KEY] is not None else ""
+        genre = movie_details[GENRE_KEY] if movie_details[GENRE_KEY] is not None else ""
+        keywords = movie_details[KEYWORDS_KEY] if movie_details[KEYWORDS_KEY] is not None else ""
+        filepath = os.path.join(movie_details[SOURCE_DIR_KEY], movie_details[FILENAME_KEY])
+        youtube_link = movie_details[YOUTUBE_URL_KEY] if movie_details[YOUTUBE_URL_KEY] is not None else ""
+        row = [
+            title,
+            year,
+            director,
+            rating,
+            description,
+            genre,
+            keywords,
+            youtube_link,
+            filepath
+        ]
+        table_data.rows.append(row)
 
-    youtube_link = f'\n\t- {PrintColors.apply_underline("youtube trailer:")} {movie_details[YOUTUBE_URL_KEY]}' if \
-    movie_details[YOUTUBE_URL_KEY] is not None else ""
+    print_table(table_data)
 
-    print(f'\n* {title} {year} {director} [{rating}/10] {desc_print} {genre} {keywords} {youtube_link} {filepath}')
+
