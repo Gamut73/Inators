@@ -8,7 +8,7 @@ import click
 from art import tprint
 
 from IMDBCacheConstants import IMDB_CACHE_KEY_LIST
-from IMDBService import get_movie_files_by_filters, get_movie_info_by_filters, print_movie_info
+from IMDBService import get_movie_files_by_filters, get_movie_info_by_filters, print_movie_info, get_info
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from util.logger import debug, info, error
@@ -155,6 +155,13 @@ def play(folder_path, number, series, filters):
     """Play random video(s) from a directory."""
     media_type = "SERIES" if series else "MOVIE"
     _play(folder_path, number_of_videos=number, video_type=media_type, filters=filters)
+
+
+@fortuna_cli.command()
+@click.argument('filepath', type=click.Path(exists=True))
+def info(filepath):
+    """Get Movie infor for a specific file or directory."""
+    get_info(filepath)
 
 
 @fortuna_cli.group('list')

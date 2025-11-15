@@ -39,6 +39,17 @@ Play random video(s) from a directory.
   - Three random episodes from a show: `python3 fortuna.py play ~/Videos/Shows -s -n 3`
   - One random filtered movie: `python3 fortuna.py play ~/Videos/Movies -f "genre:comedy,year:1999"`
 
+### Info 
+Get IMDB information for a specific video file or directory.
+
+- Syntax:
+  - `python3 fortuna.py info <filepath>`
+- Arguments:
+  - `filepath`: Path to a video file or directory containing video files
+- Examples:
+  - Get info for a single movie: `python3 fortuna.py info ~/Videos/Movies/example.mkv`
+  - Get info for all movies in a directory: `python3 fortuna.py info ~/Videos/Movies`
+
 ### List
 List cached IMDB info and available fields.
 
