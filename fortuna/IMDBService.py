@@ -169,9 +169,9 @@ def print_movie_info(movie_details_list):
     table_data = TableData(
         columns=[
             TableColumn(name="Title", style="cyan", width=30),
-            TableColumn(name="Year", style="green", width=10),
+            TableColumn(name="Year", style="green", width=20),
             TableColumn(name="Director", style="magenta", width=30),
-            TableColumn(name="Rating", style="yellow", width=10),
+            TableColumn(name="Rating", style="yellow", width=20),
             TableColumn(name="Description", style="white", width=50),
             TableColumn(name="Genre", style="blue", width=30),
             TableColumn(name="Keywords", style="red", width=30),
