@@ -3,7 +3,6 @@ import random
 import subprocess
 import sys
 
-
 import click
 from art import tprint
 
@@ -157,9 +156,9 @@ def play(folder_path, number, series, filters):
     _play(folder_path, number_of_videos=number, video_type=media_type, filters=filters)
 
 
-@fortuna_cli.command()
+@fortuna_cli.command('info')
 @click.argument('filepath', type=click.Path(exists=True))
-def info(filepath):
+def information(filepath):
     """Get Movie infor for a specific file or directory."""
     get_info(filepath)
 
