@@ -2,7 +2,6 @@ import os
 import sys
 from pathlib import Path
 
-import google.generativeai as genai
 from dotenv import load_dotenv
 
 #TODO: Destroy the monster that this file has become
@@ -13,6 +12,7 @@ from util.file_namer_llm_prompts import (build_clean_series_folder_name_prompt,
                                          build_clean_subdir_names_prompt,
                                          build_clean_episode_names_prompt,
                                          build_clean_movie_names_in_dir_prompt)
+from util.llm_client import *
 
 
 def clean_series_dir(directory):
@@ -72,13 +72,7 @@ def _clean_episode_names(subdir_path, video_files):
         new_filename = os.path.join(subdir_path, clean_title['new'])
         os.rename(os.path.join(subdir_path, clean_title['old']), new_filename)
 
-
-def _get_gemini_response(prompt):
-    _load_dotenv()
-    gemini_api_key = os.getenv('GEMINI_API_KEY')
-    genai.configure(api_key=gemini_api_key)
-    text_model = genai.GenerativeModel('gemini-2.5-flash')
-    response = text_model.generate_content(prompt)
+    response = make_llm_request(prompt)
     return (response.text
             .replace("```", "")
             .rstrip())
@@ -105,7 +99,7 @@ def _build_json_object_for_rename_response_line(response_line):
 
 def get_cleaned_names_for_movie_files(movie_names):
     prompt = build_clean_movie_names_in_dir_prompt(movie_names)
-    response = _get_gemini_response(prompt)
+    response = make_llm_request(prompt)
     clean_titles = _build_json_object_for_rename_response(response.rstrip())
 
     return clean_titles

@@ -1,4 +1,8 @@
 import os
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from util.llm_client import LLMPrompt, LLMPromptExample
 
 
 def build_clean_series_folder_name_prompt(directory):
@@ -57,7 +61,8 @@ def build_clean_episode_names_prompt(video_files):
 
 
 def build_clean_movie_names_in_dir_prompt(filenames):
-    prompt = """
+    prompt = LLMPrompt(
+        action="""
     Below are file names. Clean them up so that they are in the format of '<Movie Title: Subtitle (Year)>'. Put each 
     on a line with <old-name>||<new-name> Here is an example:
     For the filenames:
@@ -69,8 +74,24 @@ def build_clean_movie_names_in_dir_prompt(filenames):
     Akira (1988) 2160p HDR 5.1 Eng - Jpn x265 10bit Phun Psyz.mkv||Akira (1988).mkv
     Europa.Europa.1990.1080p.BluRay.x264-[YTS.LT].mp4||Europa Europa (1990).mp4
     Here are the file name(s) to clean up: 
-    """
-    for filename in filenames:
-        prompt += filename + "\n"
+    """,
+        examples=[
+            LLMPromptExample(
+                input="""
+    2004 - Survive Style 5+.mkv||Survive Style 5+ (2004).mkv
+    Akira (1988) 2160p HDR 5.1 Eng - Jpn x265 10bit Phun Psyz.mkv||Akira (1988).mkv
+    Europa.Europa.1990.1080p.BluRay.x264-[YTS.LT].mp4||Europa Europa (1990).mp4
+    Here are the file name(s) to clean up: 
+    """,
+                output="""
+    2004 - Survive Style 5+.mkv||Survive Style 5+ (2004).mkv
+    Akira (1988) 2160p HDR 5.1 Eng - Jpn x265 10bit Phun Psyz.mkv||Akira (1988).mkv
+    Europa.Europa.1990.1080p.BluRay.x264-[YTS.LT].mp4||Europa Europa (1990).mp4
+    Here are the file name(s) to clean up: 
+    """,
+            )
+        ],
+        payload=", ".join(filenames)
+    )
 
     return prompt
