@@ -11,7 +11,7 @@ from util.file_mover import get_all_video_files, is_video_file
 from util.file_namer import get_cleaned_names_for_movie_files
 from util.JsonDatabase import JsonDatabase
 from IMDBCacheConstants import *
-from util.youtube_api_client import *
+# from util.youtube_api_client import *
 from util.logger import warning, info, error
 from util.printer import print_table, TableData, TableColumn
 
@@ -140,12 +140,12 @@ def _map_imdb_response_to_db_format(imdb_response, source_dir, filename):
         YOUTUBE_URL_KEY: "" #_build_youtube_link(imdb_response["name"]) TODO: Uncomment when rate limits are handled
     }
 
-
-def _build_youtube_link(movie_name):
-    result_id = get_first_youtube_search_video_result_id(movie_name + " trailer")
-    if result_id is not None:
-        return f"https://www.youtube.com/watch?v={result_id}"
-    return "<Could not find a trailer on YouTube>"
+# TODO: Uncomment when YT rate limits are handled
+# def _build_youtube_link(movie_name):
+#     result_id = get_first_youtube_search_video_result_id(movie_name + " trailer")
+#     if result_id is not None:
+#         return f"https://www.youtube.com/watch?v={result_id}"
+#     return "<Could not find a trailer on YouTube>"
 
 
 def _map_list_to_string(list):
