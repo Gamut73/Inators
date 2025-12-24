@@ -2,8 +2,6 @@ import os
 import sys
 from pathlib import Path
 
-from dotenv import load_dotenv
-
 #TODO: Destroy the monster that this file has become
 
 
@@ -40,7 +38,7 @@ def clean_series_dir(directory):
 
 def _clean_series_folder_name(directory):
     prompt = build_clean_series_folder_name_prompt(directory)
-    response = _get_gemini_response(prompt)
+    response = make_llm_request(prompt)
     clean_titles = _build_json_object_for_rename_response(response)
 
     clean_title = clean_titles[0]
@@ -53,7 +51,7 @@ def _clean_series_folder_name(directory):
 
 def _clean_subdir_names(directory, subdirs):
     prompt = build_clean_subdir_names_prompt(subdirs)
-    response = _get_gemini_response(prompt)
+    response = make_llm_request(prompt)
     clean_titles = _build_json_object_for_rename_response(response)
 
     for clean_title in clean_titles:
@@ -64,7 +62,7 @@ def _clean_subdir_names(directory, subdirs):
 
 def _clean_episode_names(subdir_path, video_files):
     prompt = build_clean_episode_names_prompt(video_files)
-    response = _get_gemini_response(prompt)
+    response = make_llm_request(prompt)
     clean_titles = _build_json_object_for_rename_response(response)
 
     for clean_title in clean_titles:
