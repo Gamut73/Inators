@@ -13,6 +13,7 @@ from constants import *
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from util.logger import debug, info, error
+from batch_files_selection_menu import show_batch_files_selection_menu
 
 TIMESTAMPS_FOLDER = 'Videos/Clips/Timestamps'
 CSV_FILE_EDITOR = 'libreoffice'
@@ -225,19 +226,23 @@ def _get_subtitle_file_path(embedded_subtitles, subtitles, input_file_path):
 
 
 def _list_files_in_timestamps_folder():
+    batch_files = _get_batch_files_in_timestamps_folder()
+    for file in batch_files:
+        print(f"  - {os.path.splitext(file)[0]}")
+
+
+def _get_batch_files_in_timestamps_folder():
     folder_path = os.path.join(os.path.expanduser("~"), TIMESTAMPS_FOLDER)
     if os.path.exists(folder_path):
         files = os.listdir(folder_path)
         if files:
-            print("* Files in the timestamps folder:")
             filenames_to_print = [f for f in files if f.endswith('.csv')]
             filenames_to_print.sort()
-            for file in filenames_to_print:
-                print(f"  - {os.path.splitext(file)[0]}")
-        else:
-            print("No files found in the timestamps folder.")
+            return filenames_to_print
     else:
-        error(f"The timestamps folder does not exist at {folder_path}.")
+        error(f"The timestamps folder does not exist at {folder_path}. Creating it now.")
+        os.makedirs(folder_path)
+        return []
 
 
 def open_template_file(filename):
@@ -246,6 +251,15 @@ def open_template_file(filename):
         _open_csv_editor(template_filepath)
     else:
         error(f"File {filename}.csv does not exist in the timestamps folder.")
+
+
+def _select_batch_file_via_menu():
+    files = _get_batch_files_in_timestamps_folder()
+    if not files:
+        info("No batch files found in the timestamps folder.")
+        return None
+    return show_batch_files_selection_menu([os.path.splitext(f)[0] for f in files],
+                                               menu_msg="Select batch file to open:")
 
 
 @click.group()
@@ -279,7 +293,6 @@ def clip(input_file_path, start_time, end_time, clip_name, output_dir, subtitles
 
 @clipinator_cli.command()
 @click.argument('input_file_path', type=click.Path(exists=True))
-@click.argument('timestamps_file', type=str)
 @click.option('-o', '--output-dir', default=DEFAULT_OUTPUT_DIR,
               help="Output directory. Creates a new directory if it doesn't exist.")
 @click.option('-s', '--subtitles', default='', type=click.Path(),
@@ -288,9 +301,13 @@ def clip(input_file_path, start_time, end_time, clip_name, output_dir, subtitles
               help="Use subtitles embedded in the video file. Value is the index of the subtitle stream")
 @click.option('-ea', '--embedded-audio', type=int, default=None,
               help="Use audio embedded in the video file. Value is the index of the audio stream")
-def batch_clip(input_file_path, timestamps_file, output_dir, subtitles, embedded_subtitles, embedded_audio):
-    """Clip multiple segments from a video using a CSV timestamps file."""
+def batch_clip(input_file_path, output_dir, subtitles, embedded_subtitles, embedded_audio):
+    """Clip multiple segments from a video using a CSV timestamps file. A menu will be shown to select the timestamps batch file."""
     _cleanup_temp_files()
+    timestamps_file = _select_batch_file_via_menu()
+    if not timestamps_file:
+        error("You don't have any timestamp files to process.")
+        return
     try:
         subtitles_file_path = _get_subtitle_file_path(embedded_subtitles, subtitles, input_file_path)
         timestamps_filepath = _find_timestamps_file_in_timestamps_folder(timestamps_file)
@@ -335,10 +352,11 @@ def list_batch_files():
 
 
 @batch_files.command('open')
-@click.argument('filename', type=str)
-def open_batch_file(filename):
-    """Open a timestamp CSV file in the default editor."""
-    open_template_file(filename)
+def open_batch_file():
+    """Open a timestamp CSV file in the default editor. A menu will be shown to select the file."""
+    filename = _select_batch_file_via_menu()
+    if filename:
+        open_template_file(filename)
 
 
 if __name__ == "__main__":

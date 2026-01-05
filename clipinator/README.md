@@ -59,13 +59,13 @@ clipinator clip movie.mkv 10:30 12:45 "[Action][Chase]Car Scene"
 Extract multiple clips using a CSV timestamps file:
 
 ```bash
-clipinator batch-clip <INPUT_FILE> <TIMESTAMPS_FILE> [OPTIONS]
+clipinator batch-clip <VIDEO_FILE>  [OPTIONS]
 ```
+
+A menu will prompt you to select a timestamps CSV file from `~/Videos/Clips/Timestamps/`.
 
 **Arguments:**
 - `INPUT_FILE` - Path to the source video file
-- `TIMESTAMPS_FILE` - Name of the timestamps CSV file (without extension, located in `~/Videos/Clips/Timestamps`)
-
 **Options:**
 - `-o, --output-dir` - Output directory (default: `~/Videos/Clips`)
 - `-s, --subtitles` - Path to an external subtitles file (.srt)
