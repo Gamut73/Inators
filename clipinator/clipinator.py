@@ -1,9 +1,9 @@
-import argparse
 import csv
 import os.path
 import re
 import shlex
 
+import click
 from bs4 import BeautifulSoup
 from moviepy.editor import *
 from moviepy.video.tools.subtitles import SubtitlesClip
@@ -16,9 +16,20 @@ from util.logger import debug, info, error
 
 TIMESTAMPS_FOLDER = 'Videos/Clips/Timestamps'
 CSV_FILE_EDITOR = 'libreoffice'
+DEFAULT_OUTPUT_DIR = os.path.join(os.path.expanduser("~"), "Videos", "Clips")
 
 TMP_AUDIO_PATH = os.path.join(os.getcwd(), "tmp_audio.mp3")
 TMP_SUBTITLES_PATH = os.path.join(os.getcwd(), "tmp_subtitle.srt")
+
+
+def _cleanup_temp_files():
+    for tmp_path in [TMP_AUDIO_PATH, TMP_SUBTITLES_PATH]:
+        if os.path.exists(tmp_path):
+            try:
+                os.remove(tmp_path)
+            except Exception as e:
+                print(f"!!!Failed to remove temporary file: {e}!!!")
+                print(f"!!!Temporary file is located at {tmp_path}!!!")
 
 
 def clip_video(input_file_path, clip_name, start_time, end_time, output_dir, subtitles_filepath, audio_track_index):
@@ -29,15 +40,15 @@ def clip_video(input_file_path, clip_name, start_time, end_time, output_dir, sub
     og_vid_name = os.path.basename(input_file_path)
     clip_save_file_path = _build_clip_file_path(clip_name, og_vid_name, output_dir)
 
-    clip = VideoFileClip(input_file_path)
+    video_clip = VideoFileClip(input_file_path)
     if subtitles_filepath != '':
-        clip = _add_subtitles(clip, subtitles_filepath, clip.size[1])
+        video_clip = _add_subtitles(video_clip, subtitles_filepath, video_clip.size[1])
 
     if audio_track_index is not None:
-        clip = _set_alternative_audio_track(clip, input_file_path, audio_track_index)
+        video_clip = _set_alternative_audio_track(video_clip, input_file_path, audio_track_index)
 
-    clip = clip.subclip(_convert_time_to_seconds(start_time), _convert_time_to_seconds(end_time))
-    clip.write_videofile(clip_save_file_path)
+    video_clip = video_clip.subclip(_convert_time_to_seconds(start_time), _convert_time_to_seconds(end_time))
+    video_clip.write_videofile(clip_save_file_path)
 
 
 def clip_multiple_clips_from_a_video(input_file_path, clips, clips_parent_folder_name, output_dir, subtitles_file_path,
@@ -203,9 +214,9 @@ def _remove_font_size_from_subtitle_file(file_path):
         file.write(content)
 
 
-def _get_subtitle_file_path(embedded_subtitles, subtitles):
+def _get_subtitle_file_path(embedded_subtitles, subtitles, input_file_path):
     if embedded_subtitles is not None:
-        video_path = args.input_file_path
+        video_path = input_file_path
         os.system(
             f"ffmpeg -i {shlex.quote(video_path)} -map 0:s:{embedded_subtitles}  -scodec subrip -loglevel error {shlex.quote(TMP_SUBTITLES_PATH)}")
         _remove_font_size_from_subtitle_file(TMP_SUBTITLES_PATH)
@@ -234,85 +245,101 @@ def open_template_file(filename):
     if os.path.exists(template_filepath):
         _open_csv_editor(template_filepath)
     else:
-        error(f"File {args.open_timestamp_file}.csv does not exist in the timestamps folder.")
+        error(f"File {filename}.csv does not exist in the timestamps folder.")
 
 
-if __name__ == "__main__":
-    default_output_dir = os.path.join(os.path.expanduser("~"), "Videos", "Clips")
+@click.group()
+def clipinator_cli():
+    """Clipinator - Video clipping tool."""
+    pass
 
-    parser = argparse.ArgumentParser(description='Clip a video')
-    parser.add_argument('input_file_path', nargs='?', default='', help="Name of the input file")
-    parser.add_argument('start_time', nargs='?',
-                        default='',
-                        help="Start time of the clip in the format hh:mm:ss (e.g 10 is ten seconds, 00:10 is ten seconds, 21:00 is twenty one minutes, 00:21:00 is also twenty one minutes)")
-    parser.add_argument('end_time', nargs='?', default='', help="End time of the clip in the same format as start time")
-    parser.add_argument('clip_name', nargs='?', default='', help="Name of the clip")
 
-    parser.add_argument('-o', '--output_dir', default=default_output_dir,
-                        help="Output directory. Creates a new directory if it doesn't exist. Default is the current directory")
+@clipinator_cli.command()
+@click.argument('input_file_path', type=click.Path(exists=True))
+@click.argument('start_time', type=str)
+@click.argument('end_time', type=str)
+@click.argument('clip_name', type=str)
+@click.option('-o', '--output-dir', default=DEFAULT_OUTPUT_DIR,
+              help="Output directory. Creates a new directory if it doesn't exist.")
+@click.option('-s', '--subtitles', default='', type=click.Path(),
+              help="Path to the subtitles file (.srt)")
+@click.option('-es', '--embedded-subtitles', type=int, default=None,
+              help="Use subtitles embedded in the video file. Value is the index of the subtitle stream (default: 0)")
+@click.option('-ea', '--embedded-audio', type=int, default=None,
+              help="Use audio embedded in the video file. Value is the index of the audio stream")
+def clip(input_file_path, start_time, end_time, clip_name, output_dir, subtitles, embedded_subtitles, embedded_audio):
+    """Clip a single segment from a video file."""
+    _cleanup_temp_files()
+    try:
+        subtitles_file_path = _get_subtitle_file_path(embedded_subtitles, subtitles, input_file_path)
+        clip_video(input_file_path, clip_name, start_time, end_time, output_dir, subtitles_file_path, embedded_audio)
+    finally:
+        _cleanup_temp_files()
 
-    parser.add_argument('-s', '--subtitles', default='', help="Path to the subtitles file (.srt)")
-    parser.add_argument('-es', '--embedded_subtitles', nargs='?', const=0, type=int,
-                        help="Use subtitles embedded in the video file. Value is the index of the subtitle stream to "
-                             "use (default is 0)")
 
-    parser.add_argument('-ea', '--embedded_audio', nargs='?', const=0, type=int, help="Use audio embedded in the "
-                                                                                      "video file. Value is the index "
-                                                                                      "of the audio stream to use ("
-                                                                                      "default is 0)")
-
-    parser.add_argument('-f', '--file',
-                        help="CSV file name containing clip details expected to be found in the timestamps folder.")
-    parser.add_argument('-t', '--template',
-                        help="Value is the filename of a csv that will be generated with the template for the clips")
-    parser.add_argument('-ltf', '--list_timestamp_files', help="List all the template files in the timestamps folder",
-                        action='store_true')
-    parser.add_argument('-otf', '--open_timestamp_file', help="Opens the csv file in the default editor",
-                        type=str)
-
-    args = parser.parse_args()
-
-    if os.path.exists(TMP_AUDIO_PATH):
-        os.remove(TMP_AUDIO_PATH)
-    if os.path.exists(TMP_SUBTITLES_PATH):
-        os.remove(TMP_SUBTITLES_PATH)
-
-    subtitles_file_path = _get_subtitle_file_path(args.embedded_subtitles, args.subtitles)
-    if args.file:
-        timestamps_filepath = _find_timestamps_file_in_timestamps_folder(args.file)
+@clipinator_cli.command()
+@click.argument('input_file_path', type=click.Path(exists=True))
+@click.argument('timestamps_file', type=str)
+@click.option('-o', '--output-dir', default=DEFAULT_OUTPUT_DIR,
+              help="Output directory. Creates a new directory if it doesn't exist.")
+@click.option('-s', '--subtitles', default='', type=click.Path(),
+              help="Path to the subtitles file (.srt)")
+@click.option('-es', '--embedded-subtitles', type=int, default=None,
+              help="Use subtitles embedded in the video file. Value is the index of the subtitle stream")
+@click.option('-ea', '--embedded-audio', type=int, default=None,
+              help="Use audio embedded in the video file. Value is the index of the audio stream")
+def batch_clip(input_file_path, timestamps_file, output_dir, subtitles, embedded_subtitles, embedded_audio):
+    """Clip multiple segments from a video using a CSV timestamps file."""
+    _cleanup_temp_files()
+    try:
+        subtitles_file_path = _get_subtitle_file_path(embedded_subtitles, subtitles, input_file_path)
+        timestamps_filepath = _find_timestamps_file_in_timestamps_folder(timestamps_file)
         clip_multiple_clips_from_a_video(
-            args.input_file_path,
+            input_file_path,
             get_clips_from_csv_file(timestamps_filepath),
-            os.path.basename(args.file).split('.')[0],
-            args.output_dir,
+            os.path.basename(timestamps_file).split('.')[0],
+            output_dir,
             subtitles_file_path,
-            args.embedded_audio
+            embedded_audio
         )
         try:
             send2trash(timestamps_filepath)
             print(f"Moved {timestamps_filepath} to trash")
         except Exception as e:
             print(f"Failed to move {timestamps_filepath} to trash: because\n\t {e}")
-    elif args.template:
-        generate_clips_csv_file_template(args.template)
-    elif args.list_timestamp_files:
-        _list_files_in_timestamps_folder()
-    elif args.open_timestamp_file:
-        open_template_file(args.open_timestamp_file)
-    else:
-        clip_video(args.input_file_path, args.clip_name, args.start_time, args.end_time, args.output_dir,
-                   subtitles_file_path, args.embedded_audio)
+    finally:
+        _cleanup_temp_files()
 
-    if os.path.exists(TMP_SUBTITLES_PATH):
-        try:
-            os.remove(TMP_SUBTITLES_PATH)
-        except Exception as e:
-            print(f"!!!Failed to remove temporary subtitle file: because\n\t {e}!!!")
-            print(f"!!!Temporary subtitle file is located at {TMP_SUBTITLES_PATH}!!!")
 
-    if os.path.exists(TMP_AUDIO_PATH):
-        try:
-            os.remove(TMP_AUDIO_PATH)
-        except Exception as e:
-            print(f"!!!Failed to remove temporary subtitle file: because\n\t {e}!!!")
-            print(f"!!!Temporary subtitle file is located at {TMP_AUDIO_PATH}!!!")
+@clipinator_cli.command()
+@click.argument('filename', type=str)
+def template(filename):
+    """Generate a CSV template file for batch clipping."""
+    generate_clips_csv_file_template(filename)
+
+
+@clipinator_cli.group('batch-files')
+def batch_files():
+    """
+    Manage timestamp files. Actions include:
+    - list: List all timestamp files in the timestamps folder.
+    - open FILENAME: Open a timestamp CSV file in the default editor.
+    """
+    pass
+
+
+@batch_files.command('list')
+def list_batch_files():
+    """List all timestamp files in the timestamps folder."""
+    _list_files_in_timestamps_folder()
+
+
+@batch_files.command('open')
+@click.argument('filename', type=str)
+def open_batch_file(filename):
+    """Open a timestamp CSV file in the default editor."""
+    open_template_file(filename)
+
+
+if __name__ == "__main__":
+    clipinator_cli()

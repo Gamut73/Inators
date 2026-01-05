@@ -1,78 +1,144 @@
-Clipinator is for getting a clip from a video file
+# Clipinator
 
-# Usage
+A video clipping tool that allows you to extract segments from video files with optional subtitle support.
 
-run ```clipinator.py -h```
+## Installation
 
-# Arguments
-
-- `input_file_path`: Path to the input video file you want to clip.
-- `start_time`: Start time of the clip in format hh:mm:ss. Flexible input:
-  - `10` = ten seconds
-  - `00:10` = ten seconds  
-  - `21:00` = twenty-one minutes
-  - `00:21:00` = twenty-one minutes
-- `end_time`: End time of the clip using the same format as start time.
-- `clip_name`: Name of the output clip file. Supports grouping with `[Group]` syntax.
-
-Optional arguments:
-- `-o, --output_dir`: Custom output directory for saving clips. Default is `~/Videos/Clips`.
-- `-s, --subtitles`: Path to a subtitle file (.srt) to add to the clip.
-- `-es, --embedded_subtitles [index]`: Extract and use subtitles embedded in the video file. 
-  Optional index specifies which subtitle track to use (default: 0).
-- `-ea, --embedded_audio [index]`: Use a specific audio track from the video file.
-  Optional index specifies which audio track to use (default: 0).
-- `-f, --file`: Name of the CSV file containing multiple clip definitions to process in batch. The script will search for the filename in the `Timestamps` directory.
-  The original CSV file will be moved to trash after successful processing.
-- `-t, --template`: Generate a CSV template file with the given name in `~/Videos/Clips/Timestamps/`.
-- `-ltf, --list_timestamp_files`: List all timestamp files' names in the `Timestamps` directory.
-- `-otf, --open_timestamp_file`: Open a specific timestamp file in the `Timestamps` directory.
-  You can use the filename without the `.csv` extension.
-- `-h, --help`: Show help message and exit.
-
-# Grouping clips
-
-You can group clips by specify providing a **clip_name** in the form: ```'[Group0]...[GroupN]{clip_name}```'
-Essentially everything surrounded by "[]" is a folder will be created so that your file will be saved at
-```{clips_dir}/<Group0>/.../<GroupN>/{clip_name}.mp4```
-It is optional, i.e not including an groups will save the file at ```{clips_dir}/{clip_name}.mp4```
-
-# CSV file
-
-Input can be provided in a csv file and ran with the ```-f``` flag. For example:
-```clipinator /path/to/video -f <name-of-csv-file-in-Timestamps-folder>```
-You can provide a csv file with the following format and headings:
-
-```
-start, end, title (Grouping rule still apply for each title exept all groups will have the same parent folder given by the csv filename)
+```bash
+pip install -r requirements.txt
 ```
 
-and It will create a folder for the csv filename and save the clips(each row of the csv file) in that folder.
-**Anything after an open parenthesis `(` will be ignored when the folder is created and is consider extra info for 
-your benefit**
+## Usage
 
-### Example
+Clipinator uses a command-based CLI structure.
 
-```clipinator ./"Peep Show S02E04.mp4" -f "Peep Show (S02E04)"```
-will create a folder called `{clips_dir}/Peep Show` and save the clips in that folder
+### Commands Overview
 
-# Template
+```bash
+clipinator --help
+```
 
-You can generate a template csv file in the format of the above csv file by running:
-```clipinator -t <csv-file-name>```
+### Clip a Single Segment
 
-- This will generate a csv file with the headings: `start`, `end`, `title`
-- If the name has spaces wrap it in double quotes to avoid weirdness in the terminal
+Extract a single clip from a video file:
 
-### Example
+```bash
+clipinator clip <INPUT_FILE> <START_TIME> <END_TIME> <CLIP_NAME> [OPTIONS]
+```
 
-```clipinator -t "Peep Show [S01E04]"``` will create and open the file ```{clips_dir}/Timestamps/Peep Show [S01E04].csv```
+**Arguments:**
+- `INPUT_FILE` - Path to the source video file
+- `START_TIME` - Start time of the clip (format: `HH:MM:SS` or `MM:SS`)
+- `END_TIME` - End time of the clip (format: `HH:MM:SS` or `MM:SS`)
+- `CLIP_NAME` - Name for the output clip (use `[folder]` prefix to organize into subfolders)
 
+**Options:**
+- `-o, --output-dir` - Output directory (default: `~/Videos/Clips`)
+- `-s, --subtitles` - Path to an external subtitles file (.srt)
+- `-es, --embedded-subtitles` - Index of embedded subtitle stream to use
+- `-ea, --embedded-audio` - Index of embedded audio stream to use
 
-# Subtitles
-You can either provide a subtitle file with the ```-s``` flag and a .srt file as the value or use ```-es``` if the 
-video has an embedded subtitle file that can be used.
+**Examples:**
 
-# Requirements
+```bash
+# Basic clip
+clipinator clip movie.mkv 10:30 12:45 "Funny Scene"
 
-See requirements.txt
+# With subtitles
+clipinator clip movie.mkv 10:30 12:45 "Funny Scene" -s subtitles.srt
+
+# Using embedded subtitles (stream index 0)
+clipinator clip movie.mkv 10:30 12:45 "Funny Scene" -es 0
+
+# Organize into subfolders using [brackets]
+clipinator clip movie.mkv 10:30 12:45 "[Action][Chase]Car Scene"
+```
+
+### Batch Clip from CSV
+
+Extract multiple clips using a CSV timestamps file:
+
+```bash
+clipinator batch-clip <INPUT_FILE> <TIMESTAMPS_FILE> [OPTIONS]
+```
+
+**Arguments:**
+- `INPUT_FILE` - Path to the source video file
+- `TIMESTAMPS_FILE` - Name of the timestamps CSV file (without extension, located in `~/Videos/Clips/Timestamps`)
+
+**Options:**
+- `-o, --output-dir` - Output directory (default: `~/Videos/Clips`)
+- `-s, --subtitles` - Path to an external subtitles file (.srt)
+- `-es, --embedded-subtitles` - Index of embedded subtitle stream to use
+- `-ea, --embedded-audio` - Index of embedded audio stream to use
+
+**Example:**
+
+```bash
+clipinator batch-clip movie.mkv my_timestamps -es 0
+```
+
+### Create a Timestamps Template
+
+Generate a new CSV template file for batch clipping:
+
+```bash
+clipinator template <FILENAME>
+```
+
+This creates a CSV file in `~/Videos/Clips/Timestamps/` and opens it in the default editor.
+
+**Example:**
+
+```bash
+clipinator template my_movie_clips
+```
+
+### Manage Batch Files
+
+Commands to manage timestamp CSV files.
+
+#### List All Timestamp Files
+
+```bash
+clipinator batch-files list
+```
+
+#### Open a Timestamp File
+
+```bash
+clipinator batch-files open <FILENAME>
+```
+
+**Example:**
+
+```bash
+clipinator batch-files open my_timestamps
+```
+
+## CSV Timestamps Format
+
+The CSV file should have the following columns:
+
+| Column | Description |
+|--------|-------------|
+| `start_time` | Start time of the clip (HH:MM:SS or MM:SS) |
+| `end_time` | End time of the clip (HH:MM:SS or MM:SS) |
+| `ignore_subs` | Set to `y` to skip subtitles for this clip |
+| `title` | Name for the clip (supports `[folder]` prefixes) |
+
+**Example CSV:**
+
+```csv
+start_time,end_time,ignore_subs,title
+00:10:30,00:12:45,n,Funny Scene
+00:45:00,00:47:30,y,Action Scene No Subs
+01:20:00,01:22:15,n,[Best Moments]Epic Fight
+```
+
+## Folder Organization
+
+Use square brackets in clip names to organize clips into subfolders:
+
+- `[Category]Clip Name` → saves to `Category/Clip Name.mp4`
+- `[Category][Subcategory]Clip Name` → saves to `Category/Subcategory/Clip Name.mp4`
