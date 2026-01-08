@@ -104,18 +104,19 @@ Commands to manage timestamp CSV files.
 clipinator batch-files list
 ```
 
-#### Open a Timestamp File
+#### Open a batch-file in the default editor
 
 ```bash
-clipinator batch-files open <FILENAME>
+clipinator batch-files open
 ```
+A menu will prompt you to select a timestamps CSV file from the timestamps directory.
 
-**Example:**
+#### Delete Batch-file(s)
 
 ```bash
-clipinator batch-files open my_timestamps
+clipinator batch-files delete
 ```
-
+A checklist menu will prompt you to select one or more timestamps CSV files to delete from the timestamps directory. Use spacebar to select files and enter to confirm deletion(s).
 ## CSV Timestamps Format
 
 The CSV file should have the following columns:
