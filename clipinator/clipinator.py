@@ -13,7 +13,7 @@ from constants import *
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from util.logger import debug, info, error
-from batch_files_selection_menu import show_batch_files_selection_menu
+from batch_files_menus import show_batch_files_selection_menu, show_batch_files_checklist_menu
 
 TIMESTAMPS_FOLDER = 'Videos/Clips/Timestamps'
 CSV_FILE_EDITOR = 'libreoffice'
@@ -357,6 +357,29 @@ def open_batch_file():
     filename = _select_batch_file_via_menu()
     if filename:
         open_template_file(filename)
+
+
+@batch_files.command('delete')
+def delete_batch_files():
+    """Delete timestamp CSV files. A checklist menu will be shown to select the files to delete. Use the space button to tick checkboxes."""
+    files = _get_batch_files_in_timestamps_folder()
+    if not files:
+        info("No batch files found in the timestamps folder.")
+        return
+    files_to_delete = show_batch_files_checklist_menu(
+        [os.path.splitext(f)[0] for f in files],
+        menu_msg="Select batch files to delete:"
+    )
+    if not files_to_delete:
+        info("No files selected for deletion.")
+        return
+    for filename in files_to_delete:
+        file_path = _find_timestamps_file_in_timestamps_folder(filename)
+        try:
+            send2trash(file_path)
+            info(f"Moved {file_path} to trash")
+        except Exception as e:
+            error(f"Failed to move {file_path} to trash: because\n\t {e}")
 
 
 if __name__ == "__main__":
