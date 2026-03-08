@@ -12,7 +12,7 @@ from send2trash import send2trash
 from constants import *
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from util.logger import debug, info, error
+from util.logger import debug, info, error, warning
 from batch_files_menus import show_batch_files_selection_menu, show_batch_files_checklist_menu
 
 TIMESTAMPS_FOLDER = 'Videos/Clips/Timestamps'
@@ -262,6 +262,39 @@ def _select_batch_file_via_menu():
                                                menu_msg="Select batch file to open:")
 
 
+def _find_video_file_in_folder_using_batch_file_name(video_filenames, batch_file_name):
+    match_string = _get_parenthetical_text(batch_file_name)[0]
+    if not match_string:
+        error(f"Batch file name {batch_file_name} does not contain any parenthetical text to match video file name to.")
+        return None
+
+    matching_video_files = [video for video in video_filenames if match_string in video]
+    if not matching_video_files:
+        error(f"No video files found matching batch file name {batch_file_name} with match string {match_string}.")
+        return None
+    elif len(matching_video_files) > 1:
+        error(f"Multiple video files found matching batch file name {batch_file_name} with match string {match_string}. Please make sure the batch file name uniquely identifies the video file.")
+        return None
+
+    return matching_video_files[0]
+
+
+def _get_parenthetical_text(input_string):
+    if not input_string:
+        return []
+    return [match.strip() for match in re.findall(r'\(([^()]*)\)', input_string)]
+
+
+def _get_all_batch_files_for_series(series_name):
+    info(f"Searching for batch files for series {series_name}")
+    files = _get_batch_files_in_timestamps_folder()
+    series_files = []
+    for file in files:
+        if series_name in file:
+            series_files.append(file)
+    return series_files
+
+
 @click.group()
 def clipinator_cli():
     """Clipinator - Video clipping tool."""
@@ -380,6 +413,58 @@ def delete_batch_files():
             info(f"Moved {file_path} to trash")
         except Exception as e:
             error(f"Failed to move {file_path} to trash: because\n\t {e}")
+
+
+@clipinator_cli.command('series-clip')
+@click.argument('src_folder', type=click.Path(exists=True))
+@click.argument('series_name', type=str)
+def series_clip(src_folder, series_name):
+    """"
+    Clip multiple episodes from a series
+    :argument src_folder: The folder containing the videos files with episodes to clip
+    :argument series_name: The name of the series.
+    This will be used to find all the batch-files for each episode in TIMESTAMP_FOLDER. Whatever is in () in the batch file name will be used to match to the respective video file.
+    e.g "Peep Show (S01E01)" will be matched to "Peep Show S01E01.mkv"
+    """
+    series_batch_files = _get_all_batch_files_for_series(series_name)
+    if not series_batch_files:
+        error(f"No batch files found for series {series_name}. Make sure your batch files are named in the format 'Series Name (SXXEXX)' and that they are located in the timestamps folder.")
+        return
+
+    video_filenames = [f for f in os.listdir(src_folder) if f.lower().endswith(('.mp4', '.mkv', '.avi', '.mov'))]
+    if not video_filenames:
+        error(f"No video files found in source folder {src_folder}. Make sure the folder contains video files with extensions .mp4, .mkv, .avi or .mov.")
+        return
+
+    for batch_file in series_batch_files:
+        video_file = _find_video_file_in_folder_using_batch_file_name(video_filenames, batch_file)
+        if not video_file:
+            warning(f"Skipping batch file {batch_file} because no matching video file was found.")
+            continue
+
+        input_file_path = os.path.join(src_folder, video_file)
+        info(f"Processing batch file {batch_file} with video file {video_file}")
+        timestamps_filepath = _find_timestamps_file_in_timestamps_folder(os.path.splitext(batch_file)[0])
+        if not timestamps_filepath:
+            warning(f"Skipping batch file {batch_file} because the timestamps file could not be found.")
+            continue
+
+        try:
+            clip_multiple_clips_from_a_video(
+                input_file_path,
+                get_clips_from_csv_file(timestamps_filepath),
+                os.path.basename(batch_file).split('.')[0],
+                DEFAULT_OUTPUT_DIR,
+                '',
+                None
+            )
+            try:
+                send2trash(timestamps_filepath)
+                info(f"Moved {timestamps_filepath} to trash")
+            except Exception as e:
+                error(f"Failed to move {timestamps_filepath} to trash: because\n\t {e}")
+        except Exception as e:
+            error(f"An error occurred while processing batch file {batch_file}: because\n\t {e}")
 
 
 if __name__ == "__main__":

@@ -2,12 +2,6 @@
 
 A video clipping tool that allows you to extract segments from video files with optional subtitle support.
 
-## Installation
-
-```bash
-pip install -r requirements.txt
-```
-
 ## Usage
 
 Clipinator uses a command-based CLI structure.
@@ -54,7 +48,16 @@ clipinator clip movie.mkv 10:30 12:45 "Funny Scene" -es 0
 clipinator clip movie.mkv 10:30 12:45 "[Action][Chase]Car Scene"
 ```
 
-### Batch Clip from CSV
+
+## Folder Organization
+
+Use square brackets in clip names to organize clips into subfolders:
+
+- `[Category]Clip Name` → saves to `Category/Clip Name.mp4`
+- `[Category][Subcategory]Clip Name` → saves to `Category/Subcategory/Clip Name.mp4`
+
+
+## Batch Clip from CSV
 
 Extract multiple clips using a CSV timestamps file:
 
@@ -137,9 +140,19 @@ start_time,end_time,ignore_subs,title
 01:20:00,01:22:15,n,[Best Moments]Epic Fight
 ```
 
-## Folder Organization
 
-Use square brackets in clip names to organize clips into subfolders:
+## series-clip
 
-- `[Category]Clip Name` → saves to `Category/Clip Name.mp4`
-- `[Category][Subcategory]Clip Name` → saves to `Category/Subcategory/Clip Name.mp4`
+`series-clip` is a utility that processes a sequence of items (such as numbers, objects, or events) and clips them to a specified range or set of constraints. This is useful for ensuring that values in a series do not exceed defined bounds, making data normalization and validation easier.
+
+**Features:**
+- Clips each item in a series to a minimum and maximum value.
+- Supports custom clipping logic for advanced use cases.
+- Can be used in data pipelines to enforce value constraints.
+
+**Example Usage:**
+```js
+const seriesClip = require('series-clip');
+const clipped = seriesClip([1, 5, 10, 20], { min: 3, max: 15 });
+// clipped = [3, 5, 10, 15]
+```
