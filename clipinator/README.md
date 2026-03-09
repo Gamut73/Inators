@@ -140,19 +140,21 @@ start_time,end_time,ignore_subs,title
 01:20:00,01:22:15,n,[Best Moments]Epic Fight
 ```
 
-
 ## series-clip
+Clip multiple episodes from a series from multiple respective batch-files.
 
-`series-clip` is a utility that processes a sequence of items (such as numbers, objects, or events) and clips them to a specified range or set of constraints. This is useful for ensuring that values in a series do not exceed defined bounds, making data normalization and validation easier.
-
-**Features:**
-- Clips each item in a series to a minimum and maximum value.
-- Supports custom clipping logic for advanced use cases.
-- Can be used in data pipelines to enforce value constraints.
-
-**Example Usage:**
-```js
-const seriesClip = require('series-clip');
-const clipped = seriesClip([1, 5, 10, 20], { min: 3, max: 15 });
-// clipped = [3, 5, 10, 15]
+```bash
+clipinator series-clip <SOURCE_FOLDER> <SERIES_NAMEZ>
 ```
+
+**Arguments:**
+- `SOURCE_FOLDER` - Path to the folder containing episode video files
+- `SERIES_NAME` - Name of the series (used to find corresponding batch-files)
+
+**Example:**
+
+```bash
+clipinator series-clip ~/Videos/Series/Peep\ Show/S01 "Peep Show"
+``` 
+
+

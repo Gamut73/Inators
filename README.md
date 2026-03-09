@@ -21,3 +21,8 @@ Extract audio from a video file or directory with video files
 
 ### clipinator
 Cut a clip from a video file given an interval.
+
+### bash_scripts
+A collection of bash scripts that automate various tasks, such as renaming files, creating directories, and more. Each script is designed to be simple and easy to use, with clear instructions provided in the README.md file in the bash_scripts folder.
+
+
