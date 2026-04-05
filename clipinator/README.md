@@ -2,6 +2,9 @@
 
 A video clipping tool that allows you to extract segments from video files with optional subtitle support.
 
+## Requirements
+- FFmpeg (must be installed and added to PATH)
+
 ## Usage
 
 Clipinator uses a command-based CLI structure.
