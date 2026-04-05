@@ -11,7 +11,7 @@ from send2trash import send2trash
 
 from constants import *
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from util.logger import debug, info, error, warning
 from batch_files_menus import show_batch_files_selection_menu, show_batch_files_checklist_menu
 

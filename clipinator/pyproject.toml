@@ -1,0 +1,15 @@
+[project]
+name = "clipinator"
+version = "0.1.0"
+description = "CLI tool for clipping videos (singular or in batches)."
+requires-python = ">=3.8"
+dependencies = [
+    "moviepy==1.0.3",
+    "send2trash==1.8.3",
+    "beautifulsoup4==4.10.0",
+    "InquirerPy==0.3.4",
+    "auto-click-auto==0.1.5",
+]
+
+[project.scripts]
+clipinator = "clipinator:clipinator_cli"

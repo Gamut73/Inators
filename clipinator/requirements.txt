@@ -2,3 +2,4 @@ moviepy
 send2trash
 beautifulsoup4
 InquirerPy
+auto-click-auto
