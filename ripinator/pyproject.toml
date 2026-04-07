@@ -1,0 +1,9 @@
+[project]
+name = "ripinator"
+version = "0.1.0"
+description = "CLI tool for extracting audio tracks and subtitles from video files."
+requires-python = ">=3.8"
+dependencies = []
+
+[project.scripts]
+ripinator = "ripinator:main"

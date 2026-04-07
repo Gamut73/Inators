@@ -9,7 +9,7 @@ from art import tprint
 from IMDBCacheConstants import IMDB_CACHE_KEY_LIST
 from IMDBService import get_movie_files_by_filters, get_movie_info_by_filters, print_movie_info, get_info
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from util.logger import debug, info, error
 from enums import ActionType, ListType
 

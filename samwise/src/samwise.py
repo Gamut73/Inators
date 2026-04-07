@@ -2,7 +2,7 @@ import argparse
 
 import os
 import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from util.file_namer import clean_movie_names_in_dir, clean_list_of_movie_files, clean_movie_name, clean_series_dir
 from util.file_mover import move_subtitles, move_movie, remove_source_dir, is_video_file
 

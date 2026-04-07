@@ -6,7 +6,7 @@ import subprocess
 import sys
 from enum import Enum
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 
 class RipType(Enum):

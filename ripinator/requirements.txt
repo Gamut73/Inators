@@ -1,0 +1,2 @@
+# ripinator relies on system-level tools: ffmpeg and mediainfo
+# Install with: sudo apt install ffmpeg mediainfo

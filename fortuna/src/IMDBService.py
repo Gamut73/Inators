@@ -5,7 +5,7 @@ import sys
 from PyMovieDb import IMDB
 
 # Add the parent directory of both folders to the Python path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 from util.file_mover import get_all_video_files, is_video_file
 from util.file_namer import get_cleaned_names_for_movie_files
