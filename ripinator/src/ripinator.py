@@ -1,21 +1,15 @@
-import argparse
 import os
 import re
 import shlex
 import subprocess
 import sys
-from enum import Enum
+
+import click
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 
-class RipType(Enum):
-    NON = 0
-    AUDIO = 1
-    SUBTITLE = 2
-
-
-class MediaInfoSection(Enum):
+class MediaInfoSection:
     AUDIO = 'Audio'
     TEXT = 'Text'
 
@@ -67,48 +61,46 @@ def _parse_mediainfo_sections_for_streams(mediainfo_text):
 
         heading = lines[0].strip()
 
-        for media_section in MediaInfoSection:
-            if media_section.value in heading:
+        for media_section_value in [MediaInfoSection.AUDIO, MediaInfoSection.TEXT]:
+            if media_section_value in heading:
                 matching_sections.append(section.strip())
                 break
 
     return matching_sections
 
 
-def main(file_path, rip_type, index):
-    new_file = os.path.splitext(file_path)[0]
-    if rip_type == RipType.AUDIO:
-        new_file = new_file + "_audio.mp3"
-        _get_audio_from_video(file_path, new_file, index)
-    else:
-        new_file = new_file + "_subtitle.srt"
-        _get_subtitle_from_video(file_path, new_file, index)
+@click.group()
+def ripinator_cli():
+    """Ripinator - CLI tool for extracting audio tracks and subtitles from video files."""
+    pass
+
+
+@ripinator_cli.command()
+@click.argument('file_path', type=click.Path(exists=True))
+@click.option('-i', '--index', default=0, type=int,
+              help="Index of the audio stream to rip (default: 0)")
+def audio(file_path, index):
+    """Rip an audio track from a video file."""
+    output_file = os.path.splitext(file_path)[0] + "_audio.mp3"
+    _get_audio_from_video(file_path, output_file, index)
+
+
+@ripinator_cli.command()
+@click.argument('file_path', type=click.Path(exists=True))
+@click.option('-i', '--index', default=0, type=int,
+              help="Index of the subtitle stream to rip (default: 0)")
+def subtitle(file_path, index):
+    """Rip subtitles from a video file."""
+    output_file = os.path.splitext(file_path)[0] + "_subtitle.srt"
+    _get_subtitle_from_video(file_path, output_file, index)
+
+
+@ripinator_cli.command('list-streams')
+@click.argument('file_path', type=click.Path(exists=True))
+def list_streams(file_path):
+    """List audio and subtitle streams in the video file."""
+    _get_media_info(file_path)
 
 
 if __name__ == "__main__":
-    rip_type = RipType.NON
-    index = 0
-
-    parser = argparse.ArgumentParser(description='Rip audio or subtitles from a video file.')
-    parser.add_argument('file_path', type=str, help='File path of the video')
-    parser.add_argument('-a', '--audio', nargs='?', const=0, type=int,
-                        help='Rip audio from video. Optionally specify the audio index to rip (default is 0)')
-    parser.add_argument('-s', '--subtitle', nargs='?', const=0, type=int,
-                        help='Rip subtitles from video. Optionally specify the subtitle index to rip (default is 0)')
-    parser.add_argument('-ls', '--list-streams', action='store_true', help='List audio streams in the video')
-
-    args = parser.parse_args()
-
-    if args.subtitle is not None:
-        rip_type = RipType.SUBTITLE
-        index = args.subtitle
-    elif args.audio is not None:
-        rip_type = RipType.AUDIO
-        index = args.audio
-    elif args.list_streams:
-        _get_media_info(args.file_path)
-    else:
-        print("Please specify either --audio or --subtitle option.")
-
-    if rip_type != RipType.NON:
-        main(args.file_path, rip_type, index)
+    ripinator_cli()
