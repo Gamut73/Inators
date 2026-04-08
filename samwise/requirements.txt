@@ -1,1 +1,1 @@
-# samwise has no pip dependencies beyond the shared util/ module
+click

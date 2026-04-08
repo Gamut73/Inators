@@ -7,10 +7,10 @@ name = "samwise"
 version = "0.1.0"
 description = "CLI tool for organising local movie/series/anime collections."
 requires-python = ">=3.8"
-dependencies = []
+dependencies = ["click"]
 
 [project.scripts]
-samwise = "samwise:__main__"
+samwise = "samwise:samwise_cli"
 
 [tool.setuptools.packages.find]
 where = ["src"]
