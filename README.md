@@ -7,7 +7,14 @@ This is a collection of scripts that were written, sometimes without wasting a d
 Currently, each folder represents a different script. The README.md file in each folder will contain the usage instructions for that script.
 The aliases.sh file contains aliased commands that allow you to run the scripts from anywhere in the terminal. To use the aliases, you must first source the aliases.sh file. You can do this by running the following command in the terminal without having to type out the full python command
 
-# Scripts
+## Installation
+1. Clone the repository to your local machine.
+2. Run:
+```bash
+pip install -e <inator>/ (e.g pip install -e fortuna/)
+```
+
+# The Inators
 
 ### fortuna
 Helps with local entertainment by helping you get more info on your movie/series/anime collection and helping you decide what to watch next.

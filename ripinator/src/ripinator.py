@@ -29,9 +29,34 @@ def _get_subtitle_from_video(video_path, subtitle_path, subtitle_index):
     _remove_font_size_from_subtitle_file(subtitle_path)
 
 
-def _get_audio_from_video(video_path, audio_path, audio_index):
-    os.system(
-        f"ffmpeg -i {shlex.quote(video_path)} -map 0:a:{audio_index} -ab 160k -ac 2 -ar 44100 -vn {shlex.quote(audio_path)}")
+def _get_video_duration(video_path):
+    result = subprocess.run(
+        ['ffprobe', '-v', 'error', '-show_entries', 'format=duration',
+         '-of', 'default=noprint_wrappers=1:nokey=1', video_path],
+        capture_output=True, text=True, check=True
+    )
+    total_seconds = float(result.stdout.strip())
+    hours = int(total_seconds // 3600)
+    minutes = int((total_seconds % 3600) // 60)
+    seconds = int(total_seconds % 60)
+    return f"{hours:02}:{minutes:02}:{seconds:02}"
+
+
+def _get_audio_from_video(video_path, audio_path, audio_index, start_time, end_time):
+    print(f"Extracting audio stream from start time: {start_time} to end time: {end_time}...")
+    subprocess.run(
+        [
+            'ffmpeg', '-y',
+            '-ss', start_time,
+            '-to', end_time,
+            '-i', video_path,
+            '-map', f'0:a:{audio_index}',
+            '-ab', '160k', '-ac', '2', '-ar', '44100',
+            '-vn',
+            audio_path,
+        ],
+        check=True
+    )
 
 
 def _get_media_info(media_filepath):
@@ -69,6 +94,14 @@ def _parse_mediainfo_sections_for_streams(mediainfo_text):
     return matching_sections
 
 
+def _validate_timestamp(ctx, param, value):
+    if value is None:
+        return value
+    if not re.match(r'^\d{2}:\d{2}:\d{2}$', value):
+        raise click.BadParameter("Timestamp must be in 'hh:mm:ss' format.")
+    return value
+
+
 @click.group()
 def ripinator_cli():
     """Ripinator - CLI tool for extracting audio tracks and subtitles from video files."""
@@ -79,10 +112,18 @@ def ripinator_cli():
 @click.argument('file_path', type=click.Path(exists=True))
 @click.option('-i', '--index', default=0, type=int,
               help="Index of the audio stream to rip (default: 0)")
-def audio(file_path, index):
+@click.option('-s', '--start', default=None, type=str, callback=_validate_timestamp,
+              help="Start time in 'hh:mm:ss' format (default: 00:00:00)")
+@click.option('-e', '--end', default=None, type=str, callback=_validate_timestamp,
+              help="End time in 'hh:mm:ss' format (default: duration of video)")
+@click.option('-o', '--output-file', default=None, type=click.Path(),
+              help="Output audio file path (default: <input_basename>_audio.mp3)")
+def audio(file_path, index, start, end, output_file):
     """Rip an audio track from a video file."""
-    output_file = os.path.splitext(file_path)[0] + "_audio.mp3"
-    _get_audio_from_video(file_path, output_file, index)
+    output_file = output_file if output_file is not None else os.path.splitext(file_path)[0] + "_audio.mp3"
+    start_time = start if start is not None else "00:00:00"
+    end_time = end if end is not None else _get_video_duration(file_path)
+    _get_audio_from_video(file_path, output_file, index, start_time, end_time)
 
 
 @ripinator_cli.command()
