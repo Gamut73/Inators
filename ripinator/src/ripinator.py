@@ -23,9 +23,19 @@ def _remove_font_size_from_subtitle_file(file_path):
         file.write(content)
 
 
-def _get_subtitle_from_video(video_path, subtitle_path, subtitle_index):
-    os.system(
-        f"ffmpeg -i {shlex.quote(video_path)} -map 0:s:{subtitle_index}  -scodec subrip {shlex.quote(subtitle_path)}")
+def _get_subtitle_from_video(video_path, subtitle_path, subtitle_index, start_time=None, end_time=None):
+    command = ['ffmpeg', '-y']
+    if start_time is not None:
+        command.extend(['-ss', start_time])
+    if end_time is not None:
+        command.extend(['-to', end_time])
+    command.extend([
+        '-i', video_path,
+        '-map', f'0:s:{subtitle_index}',
+        '-scodec', 'subrip',
+        subtitle_path,
+    ])
+    subprocess.run(command, check=True)
     _remove_font_size_from_subtitle_file(subtitle_path)
 
 
@@ -130,10 +140,16 @@ def audio(file_path, index, start, end, output_file):
 @click.argument('file_path', type=click.Path(exists=True))
 @click.option('-i', '--index', default=0, type=int,
               help="Index of the subtitle stream to rip (default: 0)")
-def subtitle(file_path, index):
+@click.option('-s', '--start', default=None, type=str, callback=_validate_timestamp,
+              help="Start time in 'hh:mm:ss' format (default: 00:00:00)")
+@click.option('-e', '--end', default=None, type=str, callback=_validate_timestamp,
+              help="End time in 'hh:mm:ss' format (default: duration of video)")
+def subtitle(file_path, index, start, end):
     """Rip subtitles from a video file."""
     output_file = os.path.splitext(file_path)[0] + "_subtitle.srt"
-    _get_subtitle_from_video(file_path, output_file, index)
+    start_time = start if start is not None else "00:00:00"
+    end_time = end if end is not None else _get_video_duration(file_path)
+    _get_subtitle_from_video(file_path, output_file, index, start_time, end_time)
 
 
 @ripinator_cli.command('list-streams')

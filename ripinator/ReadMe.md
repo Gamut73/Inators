@@ -36,11 +36,14 @@ python src/ripinator.py audio video.mp4 --start 00:01:00 --end 00:02:30
 
 ### Extract Subtitles
 ```bash
-# Extract first subtitle track (starts at 0)
+# Extract first subtitle track (full duration)
 python src/ripinator.py subtitle video.mp4
 
 # Extract specific subtitle track by index
 python src/ripinator.py subtitle video.mp4 --index 2
+
+# Extract subtitles between start and end timestamps (hh:mm:ss)
+python src/ripinator.py subtitle video.mp4 --start 00:01:00 --end 00:02:30
 ```
 
 ### List Available Streams
@@ -57,3 +60,9 @@ python src/ripinator.py list-streams video.mp4
 - `--start`: Start timestamp in `hh:mm:ss` format. Defaults to `00:00:00`.
 - `--end`: End timestamp in `hh:mm:ss` format. Defaults to the video duration.
 - Audio output is clipped to the range between `--start` and `--end`.
+
+### Subtitle Time Range Options
+- `--start`: Start timestamp in `hh:mm:ss` format. Defaults to `00:00:00`.
+- `--end`: End timestamp in `hh:mm:ss` format. Defaults to the video duration.
+- Subtitle output is clipped to the range between `--start` and `--end`.
+
