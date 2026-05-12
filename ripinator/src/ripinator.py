@@ -23,7 +23,7 @@ def _remove_font_size_from_subtitle_file(file_path):
         file.write(content)
 
 
-def _get_subtitle_from_video(video_path, subtitle_path, subtitle_index, start_time=None, end_time=None):
+def _get_subtitle_from_video(video_path, subtitle_path, subtitle_index, start_time=None, end_time=None, verbose=False):
     command = ['ffmpeg', '-y']
     if start_time is not None:
         command.extend(['-ss', start_time])
@@ -35,7 +35,10 @@ def _get_subtitle_from_video(video_path, subtitle_path, subtitle_index, start_ti
         '-scodec', 'subrip',
         subtitle_path,
     ])
-    subprocess.run(command, check=True)
+    run_kwargs = {'check': True}
+    if not verbose:
+        run_kwargs.update({'stdout': subprocess.DEVNULL, 'stderr': subprocess.DEVNULL})
+    subprocess.run(command, **run_kwargs)
     _remove_font_size_from_subtitle_file(subtitle_path)
 
 
@@ -52,21 +55,22 @@ def _get_video_duration(video_path):
     return f"{hours:02}:{minutes:02}:{seconds:02}"
 
 
-def _get_audio_from_video(video_path, audio_path, audio_index, start_time, end_time):
+def _get_audio_from_video(video_path, audio_path, audio_index, start_time, end_time, verbose=False):
     print(f"Extracting audio stream from start time: {start_time} to end time: {end_time}...")
-    subprocess.run(
-        [
-            'ffmpeg', '-y',
-            '-ss', start_time,
-            '-to', end_time,
-            '-i', video_path,
-            '-map', f'0:a:{audio_index}',
-            '-ab', '160k', '-ac', '2', '-ar', '44100',
-            '-vn',
-            audio_path,
-        ],
-        check=True
-    )
+    command = [
+        'ffmpeg', '-y',
+        '-ss', start_time,
+        '-to', end_time,
+        '-i', video_path,
+        '-map', f'0:a:{audio_index}',
+        '-ab', '160k', '-ac', '2', '-ar', '44100',
+        '-vn',
+        audio_path,
+    ]
+    run_kwargs = {'check': True}
+    if not verbose:
+        run_kwargs.update({'stdout': subprocess.DEVNULL, 'stderr': subprocess.DEVNULL})
+    subprocess.run(command, **run_kwargs)
 
 
 def _get_media_info(media_filepath):
@@ -128,12 +132,14 @@ def ripinator_cli():
               help="End time in 'hh:mm:ss' format (default: duration of video)")
 @click.option('-o', '--output-file', default=None, type=click.Path(),
               help="Output audio file path (default: <input_basename>_audio.mp3)")
-def audio(file_path, index, start, end, output_file):
+@click.option('--verbose', is_flag=True,
+              help="Show ffmpeg logs during extraction.")
+def audio(file_path, index, start, end, output_file, verbose):
     """Rip an audio track from a video file."""
     output_file = output_file if output_file is not None else os.path.splitext(file_path)[0] + "_audio.mp3"
     start_time = start if start is not None else "00:00:00"
     end_time = end if end is not None else _get_video_duration(file_path)
-    _get_audio_from_video(file_path, output_file, index, start_time, end_time)
+    _get_audio_from_video(file_path, output_file, index, start_time, end_time, verbose)
 
 
 @ripinator_cli.command()
@@ -144,12 +150,14 @@ def audio(file_path, index, start, end, output_file):
               help="Start time in 'hh:mm:ss' format (default: 00:00:00)")
 @click.option('-e', '--end', default=None, type=str, callback=_validate_timestamp,
               help="End time in 'hh:mm:ss' format (default: duration of video)")
-def subtitle(file_path, index, start, end):
+@click.option('--verbose', is_flag=True,
+              help="Show ffmpeg logs during extraction.")
+def subtitle(file_path, index, start, end, verbose):
     """Rip subtitles from a video file."""
     output_file = os.path.splitext(file_path)[0] + "_subtitle.srt"
     start_time = start if start is not None else "00:00:00"
     end_time = end if end is not None else _get_video_duration(file_path)
-    _get_subtitle_from_video(file_path, output_file, index, start_time, end_time)
+    _get_subtitle_from_video(file_path, output_file, index, start_time, end_time, verbose)
 
 
 @ripinator_cli.command('list-streams')
