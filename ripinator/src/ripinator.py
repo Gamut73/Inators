@@ -150,11 +150,13 @@ def audio(file_path, index, start, end, output_file, verbose):
               help="Start time in 'hh:mm:ss' format (default: 00:00:00)")
 @click.option('-e', '--end', default=None, type=str, callback=_validate_timestamp,
               help="End time in 'hh:mm:ss' format (default: duration of video)")
+@click.option('-o', '--output-file', default=None, type=click.Path(),
+              help="Output audio file path (default: <input_basename>_subtitle.mp3)")
 @click.option('--verbose', is_flag=True,
               help="Show ffmpeg logs during extraction.")
-def subtitle(file_path, index, start, end, verbose):
+def subtitle(file_path, index, start, end, output_file, verbose):
     """Rip subtitles from a video file."""
-    output_file = os.path.splitext(file_path)[0] + "_subtitle.srt"
+    output_file = output_file if output_file else os.path.splitext(file_path)[0] + "_subtitle.srt"
     start_time = start if start is not None else "00:00:00"
     end_time = end if end is not None else _get_video_duration(file_path)
     _get_subtitle_from_video(file_path, output_file, index, start_time, end_time, verbose)
