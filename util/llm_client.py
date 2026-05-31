@@ -9,8 +9,8 @@ from dotenv import load_dotenv
 
 dotenv_path = os.path.join( os.path.dirname(os.path.abspath(__file__)), 'local.env')
 load_dotenv(dotenv_path)
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-GEMINI_MODEL = 'gemini-2.5-flash'
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY_SAMWISE")
+GEMINI_MODEL = 'gemini-3.1-flash-lite'
 
 
 @dataclass
