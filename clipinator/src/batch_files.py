@@ -42,7 +42,7 @@ def list_files_in_batch_file_folder():
         print(f"  - {os.path.splitext(file)[0]}")
 
 
-def open_batch_file(filename):
+def open_batch_file_in_editor(filename):
     template_filepath = os.path.join(os.path.expanduser("~"), TIMESTAMPS_FOLDER, filename + '.csv')
     if os.path.exists(template_filepath):
         open_csv_in_editor(template_filepath)

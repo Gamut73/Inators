@@ -13,7 +13,8 @@ from batch_files import (select_batch_file_via_menu,
                          find_video_file_in_folder_using_batch_file_name,
                          list_files_in_batch_file_folder,
                          generate_clips_csv_file_template,
-                         find_batch_file_by_name)
+                         find_batch_file_by_name,
+                         open_batch_file_in_editor)
 from substitles import get_tmp_subtitles_filepath, get_subtitle_file_path
 from clips import clip_video, clip_multiple_clips_from_a_video, get_tmp_audio_path, get_default_output_dir, get_clips_from_csv_file
 
@@ -122,7 +123,7 @@ def open_batch_file():
     """Open a timestamp CSV file in the default editor. A menu will be shown to select the file."""
     filename = select_batch_file_via_menu()
     if filename:
-        open_batch_file(filename)
+        open_batch_file_in_editor(filename)
 
 
 @batch_files.command('delete')
