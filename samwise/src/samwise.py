@@ -4,7 +4,7 @@ import sys
 import click
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
-from util.file_namer import clean_movie_names_in_dir, clean_list_of_movie_files, clean_movie_name, clean_series_dir
+from util.file_namer import clean_list_of_movie_files, clean_series_dir
 from util.file_mover import move_subtitles, move_movie, remove_source_dir, is_video_file
 
 
@@ -31,15 +31,21 @@ def move_movies(source_dirs):
     clean_list_of_movie_files(newly_moved_movies)
 
 
+def _get_video_files(directory):
+    all_files = os.listdir(directory)
+    video_files = [file for file in all_files if file.endswith(('.mp4', '.mkv', '.avi'))]
+    return video_files
+
+
 @samwise_cli.command('cmn')
-@click.argument('filepaths', type=click.Path(exists=True), nargs=-1, required=True)
-def clean_movie_names(filepaths):
+@click.argument('path', type=click.Path(exists=True), required=True)
+def clean_movie_names(path):
     """Clean movie names in the given files or directories."""
-    for filepath in filepaths:
-        if os.path.isdir(filepath):
-            clean_movie_names_in_dir(filepath)
-        else:
-            clean_movie_name(filepath)
+    if os.path.isdir(path):
+        video_filepaths = _get_video_files(path)
+        clean_list_of_movie_files(video_filepaths)
+    elif os.path.isfile(path):
+        clean_list_of_movie_files([path])
 
 
 @samwise_cli.command('csd')

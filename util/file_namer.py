@@ -91,6 +91,7 @@ def _build_json_object_for_rename_response(response):
 
 
 def _build_json_object_for_rename_response_line(response_line):
+    print(response_line)
     old_name, new_name = response_line.split("||")
     return {"old": old_name, "new": new_name}
 
@@ -111,17 +112,6 @@ def clean_list_of_movie_files(movie_files):
         _rename_file(clean_title['old'], new_filename)
         print(f"- {clean_title['old']} --> {clean_title['new']}")
     print('* Done :-)')
-
-
-def clean_movie_names_in_dir(directory):
-    print(f"* Finding all the movies in the directory: {directory}")
-    movie_files = _get_movies_in_dir(directory)
-
-    clean_list_of_movie_files(movie_files)
-
-
-def clean_movie_name(filepath):
-    clean_list_of_movie_files([filepath])
 
 
 def _load_dotenv():
