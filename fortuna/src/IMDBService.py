@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import sys
 
 from PyMovieDb import IMDB
@@ -88,19 +89,29 @@ def _delete_movies_from_db_not_in_dir(movie_files):
             info(f"Deleted {movie[FILENAME_KEY]} from the movies database.")
 
 
+def _is_in_clean_format(filename: str) -> bool:
+    """Check if filename matches 'Movie Title: Subtitle (Year)' format, where ': Subtitle' is optional."""
+    pattern = r'^[^()]+(?::\s[^()]+)?\s\(\d{4}\)'
+    name = os.path.splitext(os.path.basename(filename))[0]
+    return bool(re.match(pattern, name))
+
+
 def _get_movie_info(filename, imdb_client=None):
     imdb_cache = _search_imdb_cache_for_movie(db, filename)
 
     if len(imdb_cache) == 0:
         imdb = imdb_client if imdb_client is not None else IMDB()
 
-        clean_move_name = get_cleaned_names_for_movie_files([filename])
-        clean_movie_name_without_info = clean_move_name[0]['new'].split(' (')[0]
-        movie_year = clean_move_name[0]['new'].split(' (')[1].split(')')[0] if ' (' in clean_move_name[0]['new'] else \
-            None
+        if _is_in_clean_format(filename):
+            clean_name = os.path.splitext(os.path.basename(filename))[0]
+        else:
+            clean_name = get_cleaned_names_for_movie_files([filename])[0]['new']
+
+        clean_movie_name_without_info = clean_name.split(' (')[0]
+        movie_year = clean_name.split(' (')[1].split(')')[0] if ' (' in clean_name else None
 
         try:
-            movie_year = int(movie_year) if movie_year is not None else None
+            movie_year = int(str(movie_year)) if movie_year is not None else None
         except ValueError:
             warning(f"Could not parse year '{movie_year}' for movie '{clean_movie_name_without_info}'. Ignoring year ")
             movie_year = None
@@ -118,7 +129,7 @@ def _get_movie_info(filename, imdb_client=None):
                 "easier for the IMDB api")
             return
 
-        file_dir = os.path.join(os.getcwd(), os.path.dirname(filename))
+        file_dir = os.path.dirname(os.path.abspath(filename))
         imdb_cache = [_map_imdb_response_to_db_format(res, file_dir, filename)]
         db.add(imdb_cache[0])
 
