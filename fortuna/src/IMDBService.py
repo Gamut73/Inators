@@ -75,10 +75,46 @@ def get_info(file_path):
 def _get_movie_info_from_a_dir(directory, filters=None):
     filenames = get_all_video_files(directory)
 
-    for filename in filenames:
-        _get_movie_info(filename)
+    cached_movies, filenames_to_search = _split_filenames_into_cache_movies_and_filenames_to_search(filenames)
+    clean_filenames, dirty_filenames = _split_filenames_into_dirty_and_clean(filenames_to_search)
 
+    imdb = IMDB()
+    newly_cached_movies = []
+
+    for filename in clean_filenames:
+        imdb_cache = _search_for_imdb_for_movie_and_save_to_db(imdb, directory, filename)
+        if imdb_cache is not None:
+            newly_cached_movies.append(imdb_cache)
+
+    if len(dirty_filenames) > 0:
+        clean_filenames_map = get_cleaned_names_for_movie_files(dirty_filenames)
+        for filename_map in clean_filenames_map:
+            imdb_cache = _search_for_imdb_for_movie_and_save_to_db(imdb, directory, filename_map['new'],
+                                                                   custom_cache_filename=filename_map['old'])
+            if imdb_cache is not None:
+                newly_cached_movies.append(imdb_cache)
     _delete_movies_from_db_not_in_dir(filenames)
+
+    cached_movies.extend(newly_cached_movies)
+    print_movie_info(cached_movies)
+
+
+def _search_for_imdb_for_movie_and_save_to_db(imdb, directory, filename, custom_cache_filename=None):
+    movie_name, movie_year = _get_movie_name_and_year_from_filename(filename)
+    movie_year = int(str(movie_year)) if movie_year is not None else None
+    try:
+        res = imdb.get_by_name(movie_name, year=movie_year)
+        imdb_response = json.loads(res)
+        if imdb_response is not None:
+            cache_filename = custom_cache_filename if custom_cache_filename is not None else filename
+            return _save_imdb_response_to_db(imdb_response, directory, cache_filename)
+        else:
+            warning(
+                f"Could not get info for {filename}.")
+    except Exception as e:
+        warning(f"Could not get info for file: {filename}, {movie_name} ({movie_year}) from IMDB because of Error: {repr(e)}")
+
+    return None
 
 
 def _delete_movies_from_db_not_in_dir(movie_files):
@@ -89,11 +125,58 @@ def _delete_movies_from_db_not_in_dir(movie_files):
             info(f"Deleted {movie[FILENAME_KEY]} from the movies database.")
 
 
+def _split_filenames_into_cache_movies_and_filenames_to_search(filenames):
+    cached_movies = []
+    filenames_to_search = []
+    for filename in filenames:
+        movie_info = _get_movie_info_from_cache(filename)
+        if movie_info is not None:
+            cached_movies.append(movie_info)
+        else:
+            filenames_to_search.append(filename)
+    return cached_movies, filenames_to_search
+
+
+def _split_filenames_into_dirty_and_clean(filenames):
+        clean = [f for f in filenames if _is_in_clean_format(f)]
+        dirty = [f for f in filenames if not _is_in_clean_format(f)]
+        return clean, dirty
+
+
+
 def _is_in_clean_format(filename: str) -> bool:
     """Check if filename matches 'Movie Title: Subtitle (Year)' format, where ': Subtitle' is optional."""
     pattern = r'^[^()]+(?::\s[^()]+)?\s\(\d{4}\)'
     name = os.path.splitext(os.path.basename(filename))[0]
     return bool(re.match(pattern, name))
+
+
+def _get_movie_info_from_cache(filename):
+    movie_cache = _search_imdb_cache_for_movie(db, filename)
+    if len(movie_cache) == 0:
+        return None
+    return movie_cache[0]
+
+
+def _save_imdb_response_to_db(imdb_response, source_dir, filename):
+    file_dir = os.path.dirname(os.path.abspath(filename))
+    imdb_cache = [_map_imdb_response_to_db_format(imdb_response, file_dir, filename)]
+    db.add(imdb_cache[0])
+
+    return imdb_cache[0]
+
+
+def _get_movie_info_from_imdb(movie_name, movie_year=None, imdb_client=None):
+    imdb = imdb_client if imdb_client is not None else IMDB()
+    imdb_response = imdb.get_by_name(movie_name, year=movie_year)
+    res = json.loads(imdb_response)
+
+    if 'status' in res:
+        warning(
+            f"Failed to get info for {movie_name} with status {res['status']}.")
+        return None
+
+    return res
 
 
 def _get_movie_info(filename, imdb_client=None):
@@ -103,12 +186,10 @@ def _get_movie_info(filename, imdb_client=None):
         imdb = imdb_client if imdb_client is not None else IMDB()
 
         if _is_in_clean_format(filename):
-            clean_name = os.path.splitext(os.path.basename(filename))[0]
+            clean_movie_name_without_info, movie_year = _get_movie_name_and_year_from_filename(filename)
         else:
-            clean_name = get_cleaned_names_for_movie_files([filename])[0]['new']
-
-        clean_movie_name_without_info = clean_name.split(' (')[0]
-        movie_year = clean_name.split(' (')[1].split(')')[0] if ' (' in clean_name else None
+            clean_movie_filename = get_cleaned_names_for_movie_files([filename])[0]['new']
+            clean_movie_name_without_info, movie_year = _get_movie_name_and_year_from_filename(clean_movie_filename)
 
         try:
             movie_year = int(str(movie_year)) if movie_year is not None else None
@@ -135,6 +216,13 @@ def _get_movie_info(filename, imdb_client=None):
 
     print_movie_info(imdb_cache)
 
+
+def _get_movie_name_and_year_from_filename(filename):
+    movie_name = os.path.splitext(os.path.basename(filename))[0]
+    movie_name_without_info = movie_name.split(' (')[0]
+    movie_year = movie_name.split(' (')[1].split(')')[0] if ' (' in movie_name else None
+
+    return movie_name_without_info, movie_year
 
 def _map_imdb_response_to_db_format(imdb_response, source_dir, filename):
     return {
@@ -172,8 +260,8 @@ def _map_director_to_db_format(directors):
 
 
 def _search_imdb_cache_for_movie(db, filename):
-    key = db.search_by_key(FILENAME_KEY, filename)
-    return key
+    movie_cache = db.search_by_key(FILENAME_KEY, filename)
+    return movie_cache
 
 
 def print_movie_info(movie_details_list):
