@@ -1,3 +1,4 @@
+import os
 import os.path
 
 import click
@@ -5,6 +6,7 @@ from moviepy.editor import *
 from send2trash import send2trash
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+from constants import CLIPS_PARENT_FOLDER, TIMESTAMPS_FOLDER
 from util.logger import info, error, warning
 from batch_files import show_batch_files_checklist_menu, \
     get_batch_files_in_batch_file_folder
@@ -199,6 +201,34 @@ def series_clip(src_folder, series_name):
                 error(f"Failed to move {timestamps_filepath} to trash: because\n\t {e}")
         except Exception as e:
             error(f"An error occurred while processing batch file {batch_file}: because\n\t {e}")
+
+
+@clipinator_cli.group('goto')
+def goto():
+    """
+    Jump to the general clips folder or batch-files folder:
+    """
+    pass
+
+
+def _get_shell_path() -> str:
+    return os.environ.get('SHELL', 'bash')
+
+def _goto_folder(folder_path) -> None:
+    target = os.path.abspath(os.path.join(os.path.expanduser("~"), folder_path))
+    os.makedirs(target, exist_ok=True)
+    os.chdir(target)
+    os.system(_get_shell_path())
+
+
+@goto.command('clips')
+def goto_clips():
+    _goto_folder(CLIPS_PARENT_FOLDER)
+
+
+@goto.command('batch-files')
+def goto_batch_files():
+    _goto_folder(TIMESTAMPS_FOLDER)
 
 
 if __name__ == "__main__":
