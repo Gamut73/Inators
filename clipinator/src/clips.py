@@ -29,7 +29,7 @@ def get_default_output_dir():
 
 
 def add_subtitles_to_clip(video_clip, subtitles_file, video_width, video_height):
-    info("Subtitles file path: ", subtitles_file)
+    info(f"Subtitles file path: {subtitles_file}")
 
     txt_clip_generator = lambda txt: TextClip(
         text=parse_html_to_text(txt),
@@ -90,18 +90,24 @@ def clip_video(input_file_path, clip_name, start_time, end_time, output_dir, sub
     video_clip = video_clip.subclipped(convert_hms_timestamp_to_seconds(start_time), convert_hms_timestamp_to_seconds(end_time))
     video_clip.write_videofile(clip_save_file_path)
 
+    return clip_save_file_path
+
 
 def clip_multiple_clips_from_a_video(input_file_path, clips, clips_parent_folder_name, output_dir, subtitles_file_path,
                                      audio_track_index):
     clean_clips_parent_folder_name = clips_parent_folder_name.split('(')[0].strip()
     clips_parent_folder = os.path.join(output_dir, clean_clips_parent_folder_name)
+    clips_filepaths = []
     for clip in clips:
         subs_filepath = subtitles_file_path
         if 'ignore_subs' in clip and clip[IGNORE_SUBS_FIELD].lower() == 'y':
             info(f"Ignoring subtitles for clip {clip[TITLE_FIELD]}")
             subs_filepath = ''
-        clip_video(input_file_path, clip[TITLE_FIELD], clip[START_TIME_FIELD], clip[END_TIME_FIELD],
+        clip_filepath = clip_video(input_file_path, clip[TITLE_FIELD], clip[START_TIME_FIELD], clip[END_TIME_FIELD],
                    clips_parent_folder, subs_filepath, audio_track_index)
+        clips_filepaths.append(clip_filepath)
+
+    return clips_filepaths
 
 
 def get_clips_from_csv_file(filepath):

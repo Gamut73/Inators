@@ -1,13 +1,13 @@
 import os
-import sys
 import os.path
+import subprocess
+import sys
 
 import click
-from moviepy import *
 from send2trash import send2trash
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
-from constants import CLIPS_PARENT_FOLDER, TIMESTAMPS_FOLDER
+from constants import CLIPS_PARENT_FOLDER, TIMESTAMPS_FOLDER, MEDIA_PLAYER
 from util.logger import info, error, warning
 from batch_files import show_batch_files_checklist_menu, \
     get_batch_files_in_batch_file_folder
@@ -33,6 +33,12 @@ def _cleanup_temp_files():
                 print(f"!!!Temporary file is located at {tmp_path}!!!")
 
 
+def open_video_with_medial_player(video_files):
+    info(f"Playing...")
+    with open(os.devnull, 'w') as devnull:
+        subprocess.call([MEDIA_PLAYER] + video_files, stdout=devnull, stderr=devnull)
+
+
 @click.group()
 def clipinator_cli():
     """Clipinator - Video clipping tool."""
@@ -52,14 +58,21 @@ def clipinator_cli():
               help="Use subtitles embedded in the video file. Value is the index of the subtitle stream (default: 0)")
 @click.option('-ea', '--embedded-audio', type=int, default=None,
               help="Use audio embedded in the video file. Value is the index of the audio stream")
-def clip(input_file_path, start_time, end_time, clip_name, output_dir, subtitles, embedded_subtitles, embedded_audio):
+@click.option('-p', '--play', is_flag=True, help="Play the generated clip after creation.")
+def clip(input_file_path, start_time, end_time, clip_name, output_dir, subtitles, embedded_subtitles, embedded_audio,
+         play):
     """Clip a single segment from a video file."""
     _cleanup_temp_files()
     try:
         subtitles_file_path = get_subtitle_file_path(embedded_subtitles, subtitles, input_file_path)
-        clip_video(input_file_path, clip_name, start_time, end_time, output_dir, subtitles_file_path, embedded_audio)
-    finally:
+        clip_filepath = clip_video(input_file_path, clip_name, start_time, end_time, output_dir, subtitles_file_path, embedded_audio)
+
         _cleanup_temp_files()
+        if play:
+            open_video_with_medial_player([clip_filepath])
+
+    except Exception as e:
+        error(f"An error occurred while processing the video file.\n\t{e}")
 
 
 @clipinator_cli.command()
@@ -72,7 +85,8 @@ def clip(input_file_path, start_time, end_time, clip_name, output_dir, subtitles
               help="Use subtitles embedded in the video file. Value is the index of the subtitle stream")
 @click.option('-ea', '--embedded-audio', type=int, default=None,
               help="Use audio embedded in the video file. Value is the index of the audio stream")
-def batch_clip(input_file_path, output_dir, subtitles, embedded_subtitles, embedded_audio):
+@click.option('-p', '--play', is_flag=True, help="Open the output folder in the media player after creation.")
+def batch_clip(input_file_path, output_dir, subtitles, embedded_subtitles, embedded_audio, play):
     """Clip multiple segments from a video using a CSV timestamps file. A menu will be shown to select the timestamps batch file."""
     _cleanup_temp_files()
     timestamps_file = select_batch_file_via_menu()
@@ -82,10 +96,12 @@ def batch_clip(input_file_path, output_dir, subtitles, embedded_subtitles, embed
     try:
         subtitles_file_path = get_subtitle_file_path(embedded_subtitles, subtitles, input_file_path)
         timestamps_filepath = find_batch_file_by_name(timestamps_file)
-        clip_multiple_clips_from_a_video(
+        batch_name = os.path.basename(timestamps_file).split('.')[0]
+
+        clips_filepaths = clip_multiple_clips_from_a_video(
             input_file_path,
             get_clips_from_csv_file(timestamps_filepath),
-            os.path.basename(timestamps_file).split('.')[0],
+            batch_name,
             output_dir,
             subtitles_file_path,
             embedded_audio
@@ -95,8 +111,14 @@ def batch_clip(input_file_path, output_dir, subtitles, embedded_subtitles, embed
             print(f"Moved {timestamps_filepath} to trash")
         except Exception as e:
             print(f"Failed to move {timestamps_filepath} to trash: because\n\t {e}")
-    finally:
+
         _cleanup_temp_files()
+        if play:
+            open_video_with_medial_player(clips_filepaths)
+    except Exception as e:
+        error(f"An error occurred while processing batch file {timestamps_file}: because of error:")
+        print(e)
+
 
 
 @clipinator_cli.command()
@@ -182,7 +204,7 @@ def restore_batch_file():
 @click.argument('series_name', type=str)
 def series_clip(src_folder, series_name):
     """"
-    Clip multiple episodes from a series
+    Clip multiple episodes from a Fseries
     :argument src_folder: The folder containing the videos files with episodes to clip
     :argument series_name: The name of the series.
     This will be used to find all the batch-files for each episode in TIMESTAMP_FOLDER. Whatever is in () in the batch file name will be used to match to the respective video file.

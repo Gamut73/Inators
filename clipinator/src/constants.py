@@ -7,3 +7,4 @@ IGNORE_SUBS_FIELD = "ignore_subs"
 CLIPS_PARENT_FOLDER = "Videos/Clips"
 TIMESTAMPS_FOLDER = "Videos/Clips/Timestamps"
 CSV_FILE_EDITOR = 'libreoffice'
+MEDIA_PLAYER = 'vlc'
