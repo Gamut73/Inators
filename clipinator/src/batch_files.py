@@ -1,6 +1,7 @@
 import csv
 import os
 import sys
+import shutil
 
 from InquirerPy import prompt
 
@@ -98,6 +99,25 @@ def get_batch_files_in_batch_file_folder():
         error(f"The timestamps folder does not exist at {folder_path}. Creating it now.")
         os.makedirs(folder_path)
         return []
+
+
+def get_csv_files_in_trash():
+    trash_path = os.path.join(os.path.expanduser("~"), ".local", "share", "Trash", "files")
+    if not os.path.exists(trash_path):
+        return []
+    return sorted([f for f in os.listdir(trash_path) if f.endswith('.csv')])
+
+
+def restore_csv_from_trash(filename):
+    trash_path = os.path.join(os.path.expanduser("~"), ".local", "share", "Trash", "files")
+    trashinfo_path = os.path.join(os.path.expanduser("~"), ".local", "share", "Trash", "info", filename + ".trashinfo")
+    src = os.path.join(trash_path, filename)
+    dest_folder = create_folders_in_home_folder_from_path(TIMESTAMPS_FOLDER)
+    dest = os.path.join(dest_folder, filename)
+    shutil.move(src, dest)
+    if os.path.exists(trashinfo_path):
+        os.remove(trashinfo_path)
+    return dest
 
 
 def show_batch_files_selection_menu(batch_files, menu_msg):

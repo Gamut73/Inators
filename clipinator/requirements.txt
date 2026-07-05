@@ -1,5 +1,6 @@
-moviepy
+moviepy==2.2.1
 send2trash
 beautifulsoup4
 InquirerPy
 auto-click-auto
+chardet

@@ -1,8 +1,9 @@
 import os
+import sys
 import os.path
 
 import click
-from moviepy.editor import *
+from moviepy import *
 from send2trash import send2trash
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
@@ -16,7 +17,8 @@ from batch_files import (select_batch_file_via_menu,
                          list_files_in_batch_file_folder,
                          generate_clips_csv_file_template,
                          find_batch_file_by_name,
-                         open_batch_file_in_editor)
+                         open_batch_file_in_editor,
+                         show_batch_files_selection_menu)
 from substitles import get_tmp_subtitles_filepath, get_subtitle_file_path
 from clips import clip_video, clip_multiple_clips_from_a_video, get_tmp_audio_path, get_default_output_dir, get_clips_from_csv_file
 
@@ -149,6 +151,30 @@ def delete_batch_files():
             info(f"Moved {file_path} to trash")
         except Exception as e:
             error(f"Failed to move {file_path} to trash: because\n\t {e}")
+
+
+@batch_files.command('restore')
+def restore_batch_file():
+    """Restore a CSV timestamp file from the trash back to the timestamps folder."""
+    from batch_files import get_csv_files_in_trash, restore_csv_from_trash
+    files = get_csv_files_in_trash()
+    if not files:
+        info("No CSV files found in the trash.")
+        return
+    selected = show_batch_files_selection_menu(
+        [os.path.splitext(f)[0] for f in files],
+        menu_msg="Select a CSV file to restore:"
+    )
+    if not selected:
+        return
+    # Find the matching filename with extension
+    match = next((f for f in files if os.path.splitext(f)[0] == selected), None)
+    if match:
+        try:
+            dest = restore_csv_from_trash(match)
+            info(f"Restored {match} to {dest}")
+        except Exception as e:
+            error(f"Failed to restore {match}: {e}")
 
 
 @clipinator_cli.command('series-clip')

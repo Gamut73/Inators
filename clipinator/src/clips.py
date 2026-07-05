@@ -1,12 +1,16 @@
 import csv
+import os
 import shlex
+import sys
+from pathlib import Path
 
-from moviepy.editor import *
+import chardet
+from moviepy import *
 from moviepy.video.tools.subtitles import SubtitlesClip
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
-from util.logger import info
-from substitles import parse_html_to_text, remove_empty_lines_at_and_of_subtitle_file
+from util.logger import info, warning
+from substitles import parse_html_to_text
 from file_util import build_clip_file_path
 from string_util import convert_hms_timestamp_to_seconds
 from constants import START_TIME_FIELD, END_TIME_FIELD, IGNORE_SUBS_FIELD, TITLE_FIELD
@@ -24,23 +28,48 @@ def get_default_output_dir():
     return DEFAULT_OUTPUT_DIR
 
 
-def add_subtitles_to_clip(video_clip, subtitles_file, video_height):
-    print("Subtitles file path: ", subtitles_file)
+def add_subtitles_to_clip(video_clip, subtitles_file, video_width, video_height):
+    info("Subtitles file path: ", subtitles_file)
+
     txt_clip_generator = lambda txt: TextClip(
-        parse_html_to_text(txt),
-        font='Dejavu-Sans-Bold',
-        fontsize=int(video_height * 0.06),
+        text=parse_html_to_text(txt),
+        font_size=int(video_height * 0.08),
         color='white',
-        method='caption',
-        stroke_color='black',
-        stroke_width=1,
-        align='South',
-        size=video_clip.size
+        size=video_clip.size,
+        horizontal_align='center',
+        vertical_align='bottom',
+        margin=((video_width * 0.1), (video_height * 0.1)),
     )
 
-    remove_empty_lines_at_and_of_subtitle_file(subtitles_file)
-    subtitle_clip = SubtitlesClip(subtitles_file, txt_clip_generator)
-    return CompositeVideoClip((video_clip, subtitle_clip.set_position(('center', 'bottom'))), size=video_clip.size)
+    subtitle_clip = (SubtitlesClip(
+        subtitles_file,
+        make_textclip=txt_clip_generator,
+        font='DejaVuSansMono.ttf',
+        encoding=_detect_srt_encoding(subtitles_file)
+    ))
+    return CompositeVideoClip((video_clip, subtitle_clip.with_position(('center', 'bottom'))), size=video_clip.size)
+
+
+def _detect_srt_encoding(file_path):
+    """Reads a file in binary mode and detects its text encoding."""
+    path = Path(file_path)
+
+    if not path.is_file():
+        print(f"Error: The file '{file_path}' does not exist or is not a file.")
+        return None
+
+    raw_bytes = path.read_bytes()
+
+    result = chardet.detect(raw_bytes)
+    encoding = result['encoding']
+    confidence = result['confidence']
+
+    if encoding is None:
+        warning("Could not determine the encoding. The file might be empty or corrupted.")
+        return None
+
+    info(f"Detected encoding: {encoding} with confidence: {confidence:.1%}")
+    return encoding
 
 
 def clip_video(input_file_path, clip_name, start_time, end_time, output_dir, subtitles_filepath, audio_track_index):
@@ -53,12 +82,12 @@ def clip_video(input_file_path, clip_name, start_time, end_time, output_dir, sub
 
     video_clip = VideoFileClip(input_file_path)
     if subtitles_filepath != '':
-        video_clip = add_subtitles_to_clip(video_clip, subtitles_filepath, video_clip.size[1])
+        video_clip = add_subtitles_to_clip(video_clip, subtitles_filepath, video_clip.size[0], video_clip.size[1])
 
     if audio_track_index is not None:
         video_clip = set_alternative_audio_track(video_clip, input_file_path, audio_track_index)
 
-    video_clip = video_clip.subclip(convert_hms_timestamp_to_seconds(start_time), convert_hms_timestamp_to_seconds(end_time))
+    video_clip = video_clip.subclipped(convert_hms_timestamp_to_seconds(start_time), convert_hms_timestamp_to_seconds(end_time))
     video_clip.write_videofile(clip_save_file_path)
 
 
@@ -99,4 +128,4 @@ def set_alternative_audio_track(clip, video_filepath, audio_track_index):
 
     audio_clip = AudioFileClip(TMP_AUDIO_PATH)
     info("Using alternative audio track with index " + str(audio_track_index))
-    return clip.set_audio(audio_clip)
+    return clip.with_audio(audio_clip)
