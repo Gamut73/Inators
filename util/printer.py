@@ -23,13 +23,13 @@ class TableData:
     columns: list['TableColumn']
     rows: list[list[str]]
     title: str = ""
-    config: TableConfig = TableConfig()
+    config: TableConfig = None
 
 
 def print_table(data: TableData):
     console = Console()
 
-    table_config = data.config
+    table_config = data.config or TableConfig()
     table = Table(
         title=data.title,
         show_header=False if not data.title else table_config.show_header,
