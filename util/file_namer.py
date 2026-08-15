@@ -11,11 +11,12 @@ from util.file_namer_llm_prompts import (build_clean_series_folder_name_prompt,
                                          build_clean_episode_names_prompt,
                                          build_clean_movie_names_in_dir_prompt)
 from util.llm_client import *
+from util.logger import error, info
 
 
 def clean_series_dir(directory):
     if not os.path.isdir(directory):
-        print(f"{directory} is not a directory.")
+        error(f"{directory} is not a directory.")
         return
 
     directory = _clean_series_folder_name(directory)
@@ -33,7 +34,7 @@ def clean_series_dir(directory):
         video_files = _get_movies_in_dir(directory)
         if len(video_files) > 1:
             _clean_episode_names(directory, video_files)
-    print('* Done :-)')
+    info('* Done :-)')
 
 
 def _clean_series_folder_name(directory):
@@ -43,7 +44,7 @@ def _clean_series_folder_name(directory):
 
     clean_title = clean_titles[0]
     new_dirname = clean_title['new']
-    print(f"- {clean_title['old']} --> {clean_title['new']}")
+    info(f"- {clean_title['old']} --> {clean_title['new']}")
     os.rename(clean_title['old'], new_dirname)
 
     return new_dirname
@@ -55,7 +56,7 @@ def _clean_subdir_names(directory, subdirs):
     clean_titles = _build_json_object_for_rename_response(response)
 
     for clean_title in clean_titles:
-        print(f"- {clean_title['old']} --> {clean_title['new']}")
+        info(f"- {clean_title['old']} --> {clean_title['new']}")
         new_dirname = os.path.join(directory, clean_title['new'])
         os.rename(os.path.join(directory, clean_title['old']), new_dirname)
 
@@ -66,7 +67,7 @@ def _clean_episode_names(subdir_path, video_files):
     clean_titles = _build_json_object_for_rename_response(response)
 
     for clean_title in clean_titles:
-        print(f"- {clean_title['old']} --> {clean_title['new']}")
+        info(f"- {clean_title['old']} --> {clean_title['new']}")
         new_filename = os.path.join(subdir_path, clean_title['new'])
         os.rename(os.path.join(subdir_path, clean_title['old']), new_filename)
 
@@ -91,7 +92,7 @@ def _build_json_object_for_rename_response(response):
 
 
 def _build_json_object_for_rename_response_line(response_line):
-    print(response_line)
+    info(response_line)
     old_name, new_name = response_line.split("||")
     return {"old": old_name, "new": new_name}
 
@@ -108,10 +109,13 @@ def clean_list_of_movie_files(movie_files):
     clean_titles = get_cleaned_names_for_movie_files(movie_files)
 
     for clean_title in clean_titles:
-        new_filename = os.path.join(os.path.dirname(clean_title['old']), clean_title['new'])
-        _rename_file(clean_title['old'], new_filename)
-        print(f"- {clean_title['old']} --> {clean_title['new']}")
-    print('* Done :-)')
+        try:
+            new_filename = os.path.join(os.path.dirname(clean_title['old']), clean_title['new'])
+            _rename_file(clean_title['old'], new_filename)
+            info(f"- {clean_title['old']} --> {clean_title['new']}")
+        except Exception as e:
+            error(f"Failed to rename {clean_title['old']} to {clean_title['new']}: because of error: {e}")
+    info('* Done :-)')
 
 
 def _load_dotenv():
