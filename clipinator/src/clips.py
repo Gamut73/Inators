@@ -33,9 +33,13 @@ def add_subtitles_to_clip(video_clip, subtitles_file, video_width, video_height)
 
     txt_clip_generator = lambda txt: TextClip(
         text=parse_html_to_text(txt),
+        text_align="center",
         font_size=int(video_height * 0.08),
         color='white',
-        size=video_clip.size,
+        stroke_color='black',
+        stroke_width=2,
+        size=(int(video_width * 0.9), None),
+        method='caption',
         horizontal_align='center',
         vertical_align='bottom',
         margin=((video_width * 0.1), (video_height * 0.1)),
@@ -47,7 +51,11 @@ def add_subtitles_to_clip(video_clip, subtitles_file, video_width, video_height)
         font='DejaVuSansMono.ttf',
         encoding=_detect_srt_encoding(subtitles_file)
     ))
-    return CompositeVideoClip((video_clip, subtitle_clip.with_position(('center', 'bottom'))), size=video_clip.size)
+
+    return CompositeVideoClip(
+        (video_clip, subtitle_clip.with_position(('center', 'bottom'))),
+        size=video_clip.size
+    )
 
 
 def _detect_srt_encoding(file_path):
