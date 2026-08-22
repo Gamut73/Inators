@@ -16,7 +16,7 @@ TMP_SUBTITLES_PATH = os.path.join(os.getcwd(), "tmp_subtitle.srt")
 
 def show_font_examples(
         font_name_filepath_pairs,
-        example_phrase="You're here to take\n my place in this world,"
+        example_phrase="I used to talk a lot once.\nIt didn't do me any good, so I stopped."
 ):
     block_width = 420
     block_height = 180
