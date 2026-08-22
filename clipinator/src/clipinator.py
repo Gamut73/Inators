@@ -19,7 +19,7 @@ from batch_files import (select_batch_file_via_menu,
                          find_batch_file_by_name,
                          open_batch_file_in_editor,
                          show_batch_files_selection_menu)
-from substitles import get_tmp_subtitles_filepath, get_subtitle_file_path
+from substitles import get_tmp_subtitles_filepath, get_subtitle_file_path, show_subtitle_selection_menu, find_fonts
 from clips import clip_video, clip_multiple_clips_from_a_video, get_tmp_audio_path, get_default_output_dir, get_clips_from_csv_file
 
 
@@ -56,16 +56,23 @@ def clipinator_cli():
               help="Path to the subtitles file (.srt)")
 @click.option('-es', '--embedded-subtitles', type=int, default=None,
               help="Use subtitles embedded in the video file. Value is the index of the subtitle stream (default: 0)")
+@click.option('-pf', '--pick-font', is_flag=True, default=False,
+              help="If subtitles were added using -s or -es then this flag allows you to pick a custom font from all the available (.ttf) files on your system to use for the subtitles.")
 @click.option('-ea', '--embedded-audio', type=int, default=None,
               help="Use audio embedded in the video file. Value is the index of the audio stream")
 @click.option('-p', '--play', is_flag=True, help="Play the generated clip after creation.")
-def clip(input_file_path, start_time, end_time, clip_name, output_dir, subtitles, embedded_subtitles, embedded_audio,
+def clip(input_file_path, start_time, end_time, clip_name, output_dir, subtitles, embedded_subtitles, pick_font,  embedded_audio,
          play):
     """Clip a single segment from a video file."""
     _cleanup_temp_files()
+
+    custom_font_filepath = show_subtitle_selection_menu(
+        find_fonts(), menu_msg="Select a subtitle file:"
+    ) if (subtitles != '' or embedded_subtitles is not None) and pick_font else None
+
     try:
         subtitles_file_path = get_subtitle_file_path(embedded_subtitles, subtitles, input_file_path)
-        clip_filepath = clip_video(input_file_path, clip_name, start_time, end_time, output_dir, subtitles_file_path, embedded_audio)
+        clip_filepath = clip_video(input_file_path, clip_name, start_time, end_time, output_dir, subtitles_file_path, embedded_audio, custom_font_filepath)
 
         _cleanup_temp_files()
         if play:
@@ -83,13 +90,20 @@ def clip(input_file_path, start_time, end_time, clip_name, output_dir, subtitles
               help="Path to the subtitles file (.srt)")
 @click.option('-es', '--embedded-subtitles', type=int, default=None,
               help="Use subtitles embedded in the video file. Value is the index of the subtitle stream")
+@click.option('-pf', '--pick-font', is_flag=True, default=False,
+              help="If subtitles were added using -s or -es then this flag allows you to pick a custom font from all the available (.ttf) files on your system to use for the subtitles.")
 @click.option('-ea', '--embedded-audio', type=int, default=None,
               help="Use audio embedded in the video file. Value is the index of the audio stream")
 @click.option('-p', '--play', is_flag=True, help="Open the output folder in the media player after creation.")
-def batch_clip(input_file_path, output_dir, subtitles, embedded_subtitles, embedded_audio, play):
+def batch_clip(input_file_path, output_dir, subtitles, embedded_subtitles, pick_font, embedded_audio, play):
     """Clip multiple segments from a video using a CSV timestamps file. A menu will be shown to select the timestamps batch file."""
     _cleanup_temp_files()
     timestamps_file = select_batch_file_via_menu()
+
+    custom_font = show_subtitle_selection_menu(
+        find_fonts(), menu_msg="Select a subtitle file:"
+    ) if (subtitles != '' or embedded_subtitles is not None) and pick_font else None
+
     if not timestamps_file:
         error("You don't have any timestamp files to process.")
         return
@@ -104,7 +118,8 @@ def batch_clip(input_file_path, output_dir, subtitles, embedded_subtitles, embed
             batch_name,
             output_dir,
             subtitles_file_path,
-            embedded_audio
+            embedded_audio,
+            custom_font
         )
         try:
             send2trash(timestamps_filepath)
@@ -259,16 +274,6 @@ def goto():
     pass
 
 
-def _get_shell_path() -> str:
-    return os.environ.get('SHELL', 'bash')
-
-def _goto_folder(folder_path) -> None:
-    target = os.path.abspath(os.path.join(os.path.expanduser("~"), folder_path))
-    os.makedirs(target, exist_ok=True)
-    os.chdir(target)
-    os.system(_get_shell_path())
-
-
 @goto.command('clips')
 def goto_clips():
     _goto_folder(CLIPS_PARENT_FOLDER)
@@ -277,6 +282,16 @@ def goto_clips():
 @goto.command('batch-files')
 def goto_batch_files():
     _goto_folder(TIMESTAMPS_FOLDER)
+
+
+def _get_shell_path() -> str:
+    return os.environ.get('SHELL', 'bash')
+
+def _goto_folder(folder_path) -> None:
+    target = os.path.abspath(os.path.join(os.path.expanduser("~"), folder_path))
+    os.makedirs(target, exist_ok=True)
+    os.chdir(target)
+    os.system(_get_shell_path())
 
 
 if __name__ == "__main__":

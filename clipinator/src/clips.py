@@ -28,7 +28,7 @@ def get_default_output_dir():
     return DEFAULT_OUTPUT_DIR
 
 
-def add_subtitles_to_clip(video_clip, subtitles_file, video_width, video_height):
+def add_subtitles_clip(video_clip, subtitles_file, video_width, video_height, custom_font_filepath):
     info(f"Subtitles file path: {subtitles_file}")
 
     txt_clip_generator = lambda txt: TextClip(
@@ -48,7 +48,7 @@ def add_subtitles_to_clip(video_clip, subtitles_file, video_width, video_height)
     subtitle_clip = (SubtitlesClip(
         subtitles_file,
         make_textclip=txt_clip_generator,
-        font='DejaVuSansMono.ttf',
+        font=custom_font_filepath,
         encoding=_detect_srt_encoding(subtitles_file)
     ))
 
@@ -80,7 +80,7 @@ def _detect_srt_encoding(file_path):
     return encoding
 
 
-def clip_video(input_file_path, clip_name, start_time, end_time, output_dir, subtitles_filepath, audio_track_index):
+def clip_video(input_file_path, clip_name, start_time, end_time, output_dir, subtitles_filepath, audio_track_index, custom_font_filepath):
     info(f"Clipping from {start_time} to {end_time} and saving it as {clip_name}")
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -90,7 +90,7 @@ def clip_video(input_file_path, clip_name, start_time, end_time, output_dir, sub
 
     video_clip = VideoFileClip(input_file_path)
     if subtitles_filepath != '':
-        video_clip = add_subtitles_to_clip(video_clip, subtitles_filepath, video_clip.size[0], video_clip.size[1])
+        video_clip = add_subtitles_clip(video_clip, subtitles_filepath, video_clip.size[0], video_clip.size[1], custom_font_filepath)
 
     if audio_track_index is not None:
         video_clip = set_alternative_audio_track(video_clip, input_file_path, audio_track_index)
@@ -102,7 +102,7 @@ def clip_video(input_file_path, clip_name, start_time, end_time, output_dir, sub
 
 
 def clip_multiple_clips_from_a_video(input_file_path, clips, clips_parent_folder_name, output_dir, subtitles_file_path,
-                                     audio_track_index):
+                                     audio_track_index, custom_font_filepath):
     clean_clips_parent_folder_name = clips_parent_folder_name.split('(')[0].strip()
     clips_parent_folder = os.path.join(output_dir, clean_clips_parent_folder_name)
     clips_filepaths = []
@@ -112,7 +112,7 @@ def clip_multiple_clips_from_a_video(input_file_path, clips, clips_parent_folder
             info(f"Ignoring subtitles for clip {clip[TITLE_FIELD]}")
             subs_filepath = ''
         clip_filepath = clip_video(input_file_path, clip[TITLE_FIELD], clip[START_TIME_FIELD], clip[END_TIME_FIELD],
-                   clips_parent_folder, subs_filepath, audio_track_index)
+                   clips_parent_folder, subs_filepath, audio_track_index, custom_font_filepath)
         clips_filepaths.append(clip_filepath)
 
     return clips_filepaths

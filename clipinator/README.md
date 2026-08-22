@@ -33,6 +33,7 @@ clipinator clip <INPUT_FILE> <START_TIME> <END_TIME> <CLIP_NAME> [OPTIONS]
 - `-o, --output-dir` - Output directory (default: `~/Videos/Clips`)
 - `-s, --subtitles` - Path to an external subtitles file (.srt)
 - `-es, --embedded-subtitles` - Index of embedded subtitle stream to use
+ - `-pf, --pick-font` - Flag. If used a menu will be displayed for you to pick a custom font from your system for subtitles
 - `-ea, --embedded-audio` - Index of embedded audio stream to use
 
 **Examples:**
@@ -76,6 +77,7 @@ A menu will prompt you to select a timestamps CSV file from `~/Videos/Clips/Time
 - `-o, --output-dir` - Output directory (default: `~/Videos/Clips`)
 - `-s, --subtitles` - Path to an external subtitles file (.srt)
 - `-es, --embedded-subtitles` - Index of embedded subtitle stream to use
+- `-pf, --pick-font` - Flag. If used a menu will be displayed for you to pick a custom font from your system for subtitles
 - `-ea, --embedded-audio` - Index of embedded audio stream to use
 
 **Example:**
