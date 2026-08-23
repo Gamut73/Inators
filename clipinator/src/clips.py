@@ -34,6 +34,7 @@ def add_subtitles_clip(video_clip, subtitles_file, video_width, video_height, cu
     txt_clip_generator = lambda txt: TextClip(
         text=parse_html_to_text(txt),
         text_align="center",
+        font=custom_font_filepath,
         font_size=int(video_height * 0.08),
         color='white',
         stroke_color='black',
@@ -48,7 +49,6 @@ def add_subtitles_clip(video_clip, subtitles_file, video_width, video_height, cu
     subtitle_clip = (SubtitlesClip(
         subtitles_file,
         make_textclip=txt_clip_generator,
-        font=custom_font_filepath,
         encoding=_detect_srt_encoding(subtitles_file)
     ))
 

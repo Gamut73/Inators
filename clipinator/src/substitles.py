@@ -1,14 +1,14 @@
 import os
+import platform
 import re
 import shlex
-import sys
-import platform
 import subprocess
+import sys
 from pathlib import Path
 
-from bs4 import BeautifulSoup
 from InquirerPy import prompt
 from PIL import Image, ImageDraw, ImageFont
+from bs4 import BeautifulSoup
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
@@ -162,10 +162,11 @@ def find_fonts():
 
 
 def _font_filepaths_to_name_filepath_pairs(font_filepaths):
-    return [
+    font_name_and_path_pairs = [
         (Path(font_filepath).stem, font_filepath)
         for font_filepath in font_filepaths
     ]
+    return sorted(font_name_and_path_pairs, key=lambda x: x[0])
 
 
 def _find_linux_fonts():

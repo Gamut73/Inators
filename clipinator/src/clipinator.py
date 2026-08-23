@@ -57,7 +57,7 @@ def clipinator_cli():
 @click.option('-es', '--embedded-subtitles', type=int, default=None,
               help="Use subtitles embedded in the video file. Value is the index of the subtitle stream (default: 0)")
 @click.option('-pf', '--pick-font', is_flag=True, default=False,
-              help="If subtitles were added using -s or -es then this flag allows you to pick a custom font from all the available (.ttf) files on your system to use for the subtitles.")
+              help="If subtitles were added using -s or -es then this flag allows you to pick a custom font from all the available (.ttf) files on your system to use for the subtitles. First option generates an image with samples of all the available fonts.")
 @click.option('-ea', '--embedded-audio', type=int, default=None,
               help="Use audio embedded in the video file. Value is the index of the audio stream")
 @click.option('-p', '--play', is_flag=True, help="Play the generated clip after creation.")
@@ -91,7 +91,7 @@ def clip(input_file_path, start_time, end_time, clip_name, output_dir, subtitles
 @click.option('-es', '--embedded-subtitles', type=int, default=None,
               help="Use subtitles embedded in the video file. Value is the index of the subtitle stream")
 @click.option('-pf', '--pick-font', is_flag=True, default=False,
-              help="If subtitles were added using -s or -es then this flag allows you to pick a custom font from all the available (.ttf) files on your system to use for the subtitles.")
+              help="If subtitles were added using -s or -es then this flag allows you to pick a custom font from all the available (.ttf) files on your system to use for the subtitles. First option generates an image with samples of all the available fonts.")
 @click.option('-ea', '--embedded-audio', type=int, default=None,
               help="Use audio embedded in the video file. Value is the index of the audio stream")
 @click.option('-p', '--play', is_flag=True, help="Open the output folder in the media player after creation.")
