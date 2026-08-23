@@ -18,11 +18,12 @@ def show_font_examples(
         font_name_filepath_pairs,
         example_phrase="I used to talk a lot once.\nIt didn't do me any good, so I stopped."
 ):
-    block_width = 420
+    block_width = 500
     block_height = 180
     padding = 20
     columns = 3
-    font_size = 28
+    font_name_text_font_size = 32
+    example_phrase_text_font_size = 20
     background_color = (35, 35, 35)
     text_color = (255, 255, 255)
 
@@ -46,24 +47,24 @@ def show_font_examples(
         )
 
         try:
-            font = ImageFont.truetype(str(font_filepath), font_size)
-            label_font = ImageFont.truetype(str(font_filepath), 18)
+            example_phrase_text_font = ImageFont.truetype(str(font_filepath), example_phrase_text_font_size)
+            font_name_font = ImageFont.truetype(str(font_filepath), font_name_text_font_size)
         except OSError:
-            font = ImageFont.load_default()
-            label_font = ImageFont.load_default()
+            example_phrase_text_font = ImageFont.load_default()
+            font_name_font = ImageFont.load_default()
 
         draw.text(
             (x + padding, y + padding),
             font_name,
             fill=text_color,
-            font=label_font,
+            font=font_name_font,
         )
 
         draw.multiline_text(
-            (x + padding, y + padding + 40),
+            (x + padding, y + padding + 70),
             example_phrase,
             fill=text_color,
-            font=font,
+            font=example_phrase_text_font,
             spacing=8,
         )
 
