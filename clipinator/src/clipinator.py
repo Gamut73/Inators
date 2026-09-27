@@ -13,13 +13,13 @@ from batch_files import show_batch_files_checklist_menu, \
     get_batch_files_in_batch_file_folder
 from batch_files import (select_batch_file_via_menu,
                          get_all_batch_files_for_series,
-                         find_video_file_in_folder_using_batch_file_name,
+                         find_file_from_list_using_batch_file_name,
                          list_files_in_batch_file_folder,
                          generate_clips_csv_file_template,
                          find_batch_file_by_name,
                          open_batch_file_in_editor,
                          show_batch_files_selection_menu)
-from substitles import get_tmp_subtitles_filepath, get_subtitle_file_path, show_subtitle_selection_menu, find_fonts
+from substitles import get_tmp_subtitles_filepath, get_subtitle_file_path, show_subtitle_selection_menu, find_fonts, find_srt_subtitles
 from clips import clip_video, clip_multiple_clips_from_a_video, get_tmp_audio_path, get_default_output_dir, get_clips_from_csv_file
 
 
@@ -217,7 +217,10 @@ def restore_batch_file():
 @clipinator_cli.command('series-clip')
 @click.argument('src_folder', type=click.Path(exists=True))
 @click.argument('series_name', type=str)
-def series_clip(src_folder, series_name):
+@click.option('-fs', '--find-subs', is_flag=True, default=False, help="")
+@click.option('-pf', '--pick-font', is_flag=True, default=False,
+              help="If subtitles were added using -s or -es then this flag allows you to pick a custom font from all the available (.ttf) files on your system to use for the subtitles. First option generates an image with samples of all the available fonts.")
+def series_clip(src_folder, series_name, find_subs, pick_font):
     """"
     Clip multiple episodes from a Fseries
     :argument src_folder: The folder containing the videos files with episodes to clip
@@ -235,10 +238,22 @@ def series_clip(src_folder, series_name):
         error(f"No video files found in source folder {src_folder}. Make sure the folder contains video files with extensions .mp4, .mkv, .avi or .mov.")
         return
 
+    should_find_subs = find_subs is not None
+    custom_font_filepath = show_subtitle_selection_menu(
+        find_fonts(), menu_msg="Select a subtitle file:"
+    ) if should_find_subs and pick_font else None
+
+    subtitle_files = find_srt_subtitles(True if should_find_subs else False, src_folder)
+
     for batch_file in series_batch_files:
-        video_file = find_video_file_in_folder_using_batch_file_name(video_filenames, batch_file)
+        video_file = find_file_from_list_using_batch_file_name(video_filenames, batch_file)
+        subtitles_file = find_file_from_list_using_batch_file_name(subtitle_files, batch_file) if should_find_subs else ''
+
         if not video_file:
             warning(f"Skipping batch file {batch_file} because no matching video file was found.")
+            continue
+        elif should_find_subs and not subtitles_file:
+            warning(f"Skipping batch file {batch_file} because no matching subtitles file was found.")
             continue
 
         input_file_path = os.path.join(src_folder, video_file)
@@ -254,8 +269,9 @@ def series_clip(src_folder, series_name):
                 get_clips_from_csv_file(timestamps_filepath),
                 os.path.basename(batch_file).split('.')[0],
                 get_default_output_dir(),
-                '',
-                None
+                subtitles_file,
+                None,
+                custom_font_filepath
             )
             try:
                 send2trash(timestamps_filepath)

@@ -110,6 +110,39 @@ def get_subtitle_file_path(embedded_subtitles, subtitles, input_file_path):
     return subtitles
 
 
+def find_srt_subtitles(
+    should_find_subs: bool, src_folderpath: str | Path
+) -> list[str]:
+    """Finds .srt files in the root folder and any 'Subs' or 'Subtitles' subfolders.
+
+    :param should_find_subs: Flag indicating whether to perform the search.
+    :param src_folderpath: Path to the source directory.
+    :return: List of file path strings for matching .srt files.
+    """
+    if not should_find_subs:
+        return []
+
+    src = Path(src_folderpath)
+    srt_files = []
+    target_folder_names = {"subs", "subtitles"}
+
+    for path in src.rglob("*"):
+        # Ensure it's a file with a .srt extension (case-insensitive)
+        if path.is_file() and path.suffix.lower() == ".srt":
+            # Get parent directory names relative to src_folderpath
+            folder_parts = [
+                p.lower() for p in path.relative_to(src).parts[:-1]
+            ]
+
+            # Include if in the root directory OR inside a "Subs" / "Subtitles" folder
+            if not folder_parts or any(
+                folder in target_folder_names for folder in folder_parts
+            ):
+                srt_files.append(str(path))
+
+    return srt_files
+
+
 def _remove_font_size_from_subtitle_file(file_path):
     with open(file_path, 'r') as file:
         content = file.read()

@@ -5,6 +5,8 @@ import shutil
 
 from InquirerPy import prompt
 
+from util import file_namer
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from util.logger import info, error
 from constants import TIMESTAMPS_FOLDER
@@ -51,21 +53,21 @@ def open_batch_file_in_editor(filename):
         error(f"File {filename}.csv does not exist in the timestamps folder.")
 
 
-def find_video_file_in_folder_using_batch_file_name(video_filenames, batch_file_name):
+def find_file_from_list_using_batch_file_name(filenames, batch_file_name):
     match_string = extract_text_from_parenthesis(batch_file_name)[0]
     if not match_string:
         error(f"Batch file name {batch_file_name} does not contain any parenthetical text to match video file name to.")
         return None
 
-    matching_video_files = [video for video in video_filenames if match_string in video]
-    if not matching_video_files:
-        error(f"No video files found matching batch file name {batch_file_name} with match string {match_string}.")
+    matching_files = [file for file in filenames if match_string in file]
+    if not matching_files:
+        error(f"No files found matching batch file name {batch_file_name} with match string {match_string}.")
         return None
-    elif len(matching_video_files) > 1:
-        error(f"Multiple video files found matching batch file name {batch_file_name} with match string {match_string}. Please make sure the batch file name uniquely identifies the video file.")
+    elif len(matching_files) > 1:
+        error(f"Multiple files found matching batch file name {batch_file_name} with match string {match_string}. Please make sure the batch file name uniquely identifies the video file.")
         return None
 
-    return matching_video_files[0]
+    return matching_files[0]
 
 
 def select_batch_file_via_menu():
