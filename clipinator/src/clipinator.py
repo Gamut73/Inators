@@ -214,6 +214,16 @@ def restore_batch_file():
             error(f"Failed to restore {match}: {e}")
 
 
+def get_video_filepaths_recursive(folder):
+    video_extensions = ('.mp4', '.mkv', '.avi', '.mov')
+    return [
+        os.path.join(root, f)
+        for root, _, files in os.walk(folder)
+        for f in files
+        if f.lower().endswith(video_extensions)
+    ]
+
+
 @clipinator_cli.command('series-clip')
 @click.argument('src_folder', type=click.Path(exists=True))
 @click.argument('series_name', type=str)
@@ -223,6 +233,8 @@ def restore_batch_file():
 def series_clip(src_folder, series_name, find_subs, pick_font):
     """"
     Clip multiple episodes from a Fseries
+    :param pick_font: If cli flag is set, allows you to pick a custom font from all the available (.ttf) files on your system to use for the subtitles.
+    :param find_subs: Whether to find subtitles for each episode using the same identifier.
     :argument src_folder: The folder containing the videos files with episodes to clip
     :argument series_name: The name of the series.
     This will be used to find all the batch-files for each episode in TIMESTAMP_FOLDER. Whatever is in () in the batch file name will be used to match to the respective video file.
@@ -233,12 +245,12 @@ def series_clip(src_folder, series_name, find_subs, pick_font):
         error(f"No batch files found for series {series_name}. Make sure your batch files are named in the format 'Series Name (SXXEXX)' and that they are located in the timestamps folder.")
         return
 
-    video_filenames = [f for f in os.listdir(src_folder) if f.lower().endswith(('.mp4', '.mkv', '.avi', '.mov'))]
-    if not video_filenames:
+    video_filepaths = get_video_filepaths_recursive(src_folder)
+    if not video_filepaths:
         error(f"No video files found in source folder {src_folder}. Make sure the folder contains video files with extensions .mp4, .mkv, .avi or .mov.")
         return
 
-    should_find_subs = find_subs is not None
+    should_find_subs = find_subs
     custom_font_filepath = show_subtitle_selection_menu(
         find_fonts(), menu_msg="Select a subtitle file:"
     ) if should_find_subs and pick_font else None
@@ -246,18 +258,17 @@ def series_clip(src_folder, series_name, find_subs, pick_font):
     subtitle_files = find_srt_subtitles(True if should_find_subs else False, src_folder)
 
     for batch_file in series_batch_files:
-        video_file = find_file_from_list_using_batch_file_name(video_filenames, batch_file)
+        video_filepath = find_file_from_list_using_batch_file_name(video_filepaths, batch_file)
         subtitles_file = find_file_from_list_using_batch_file_name(subtitle_files, batch_file) if should_find_subs else ''
 
-        if not video_file:
+        if not video_filepath:
             warning(f"Skipping batch file {batch_file} because no matching video file was found.")
             continue
         elif should_find_subs and not subtitles_file:
             warning(f"Skipping batch file {batch_file} because no matching subtitles file was found.")
             continue
 
-        input_file_path = os.path.join(src_folder, video_file)
-        info(f"Processing batch file {batch_file} with video file {video_file}")
+        info(f"Processing batch file {batch_file} with video file {video_filepath}")
         timestamps_filepath = find_batch_file_by_name(os.path.splitext(batch_file)[0])
         if not timestamps_filepath:
             warning(f"Skipping batch file {batch_file} because the timestamps file could not be found.")
@@ -265,7 +276,7 @@ def series_clip(src_folder, series_name, find_subs, pick_font):
 
         try:
             clip_multiple_clips_from_a_video(
-                input_file_path,
+                video_filepath,
                 get_clips_from_csv_file(timestamps_filepath),
                 os.path.basename(batch_file).split('.')[0],
                 get_default_output_dir(),
